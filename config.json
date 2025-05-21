@@ -1,16 +1,16 @@
 {
-    "token": "tokenin",
-    "log": "logkanali-yenisunucuyaeklendigindefelanatılıcakkanalid",
-    "sahip": "seninid",
-    "desteksunucusu": "https://discord.gg/vsc",
-    "bot-davet": "botdaveti",
-    "bot-adi": "Vsc Genel Bot",
-    "clientId": "clientid",
+    "token": "MTM3NDc3MzM4NTA1NzQwNjk3Ng.GV_nAw.JUOXa3Lh2kx15EPuRWdu4ruiuypZbBdPJ08vFI",
+    "log": "1374772399689437237",
+    "sahip": "999406459106373722",
+    "desteksunucusu": "https://discord.gg/QUjaT4RzCK",
+    "bot-davet": "https://discord.com/oauth2/authorize?client_id=1374773385057406976&permissions=8&integration_type=0&scope=bot+applications.commands",
+    "bot-adi": "Idc",
+    "clientId": "1374773385057406976",
     "mesajXp": 1,
     "sesXp": 2,
     "levelXp": 99,
     "embedColor": "#5865F2",
     "errorColor": "#ED4245",
     "successColor": "#57F287",
-    "footer": "📊 discord.gg/vsc"
+    "footer": "💨 reallykrak"
   }
