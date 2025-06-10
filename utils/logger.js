@@ -21,6 +21,6 @@ const createLogger = () => {
   return logger;
 };
 
-globalThis.log = createLogger();
+const log = createLogger();
 
 export default log;
