@@ -51,7 +51,7 @@ module.exports = [
     },
   },
   {
-    name: "entrance-exit-close",
+    name: "giriş-çıkış-kapat",
     description: "Entrance-Exit Closes the message system!",
     type: 1,
     options: [],
