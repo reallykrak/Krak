@@ -121,7 +121,7 @@ client.on("guildMemberAdd", async (member) => {
     )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
     .setImage(
-      "https://media.tenor.com/1c8Um5VErzwAAAAM/deep-turkish-web-hosgeldin.gif"
+      "https://cdn.discordapp.com/attachments/1254160373133869179/1263563031774892073/ArhiBots_QjM3heKn0B.gif"
     )
     .setColor("#00FF00")
     .setFooter({
