@@ -3,7 +3,6 @@ import { Client, GatewayIntentBits, Partials, Collection, Routes } from 'discord
 import { REST } from '@discordjs/rest';
 import fs from 'fs';
 import { config } from './config.js'; // Ayar dosyasını içe aktar
-import { log } from './utils/logger.js'; // Özel logger'ı içe aktar
 
 // Client (Bot) objesini oluştur
 // İkinci kod parçasındaki gibi daha kapsamlı intent'ler (izinler) ve partial'lar kullanıldı.
