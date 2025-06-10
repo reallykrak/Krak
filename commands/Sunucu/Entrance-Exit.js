@@ -8,7 +8,7 @@ const db = require("croxydb");
 
 module.exports = [
   {
-    name: "entrance-exit",
+    name: "giriş-çıkış",
     description:
       "Sets the Entrance-Exit message!",
     type: 1,
