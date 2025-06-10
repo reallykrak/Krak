@@ -1,8 +1,8 @@
-const { Client, GatewayIntentBits, Partials, Collection } = require("discord.js");
-const fs = require("fs");
-const config = require("./config.json");
-const { loadEvents } = require("./function/eventLoader");
-const { loadCommands } = require("./function/commandLoader");
+import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
+import fs from "fs";
+import config from "./config.json" assert { type: "json" };
+import { loadEvents } from "./function/eventLoader.js";
+import { loadCommands } from "./function/commandLoader.js";
 
 const client = new Client({
   intents: [
