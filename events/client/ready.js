@@ -25,7 +25,7 @@ module.exports = {
       console.log(gradient.pastel.multiline(data));
       
       client.user.setPresence({
-        activities: [{ name: `youtube.com/@WraithsDev`, type: ActivityType.Watching }],
+        activities: [{ name: `Nuron's Krak Bots is the best`, type: ActivityType.Watching }],
         status: 'idle',
       });
       
