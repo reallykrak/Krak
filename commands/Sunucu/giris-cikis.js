@@ -111,7 +111,7 @@ client.on("guildMemberAdd", async (member) => {
       Sunucumuza katıldığın için teşekkürler! 😊
 
       **Kullanıcı Bilgileri:**
-      🆔 **ID:** ${member.user.id}
+      <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
       📅 **Hesap Oluşturma:** <t:${Math.floor(member.user.createdAt / 1000)}:R>
 
       **Sunucu Bilgileri:**
@@ -153,7 +153,7 @@ client.on("guildMemberRemove", async (member) => {
       Umarız tekrar aramıza dönersin!
 
       **Kullanıcı Bilgileri:**
-      🆔 **ID:** ${member.user.id}
+      <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
       📅 **Katılma Tarihi:** <t:${Math.floor(member.joinedAt / 1000)}:R>
 
       **Sunucu Bilgileri:**
