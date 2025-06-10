@@ -14,7 +14,7 @@ module.exports = [
     type: 1,
     options: [
       {
-        name: "Channel",
+        name: "channel",
         description: "Channel to Send Messages!",
         type: 7,
         required: true,
@@ -34,7 +34,7 @@ module.exports = [
         });
       }
 
-      const kanal = interaction.options.getChannel("Channel");
+      const kanal = interaction.options.getChannel("channel");
       const guildId = interaction.guild.id;
 
       db.set(`girisCikisKanal_${guildId}`, kanal.id);
@@ -51,7 +51,7 @@ module.exports = [
     },
   },
   {
-    name: "Entrance-Exit-Close",
+    name: "entrance-exit-close",
     description: "Entrance-Exit Closes the message system!",
     type: 1,
     options: [],
