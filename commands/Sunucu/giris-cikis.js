@@ -8,14 +8,13 @@ const db = require("croxydb");
 
 module.exports = [
   {
-    name: "giriş-çıkış",
-    description:
-      "Sets the Entrance-Exit message!",
+    name: "entrance_exit",
+    description: "Sets the Entrance-Exit message!",
     type: 1,
     options: [
       {
         name: "channel",
-        description: "Channel to Send Messages!",
+        description: "Channel to send messages!",
         type: 7,
         required: true,
         channel_types: [ChannelType.GuildText],
@@ -29,7 +28,7 @@ module.exports = [
       ) {
         return interaction.reply({
           content:
-            "<:no:1382108974584823978> | to use this command **Owner** to the authority own You must be!",
+            "<:no:1382108974584823978> | To use this command, you must have **Administrator** permission!",
           ephemeral: true,
         });
       }
@@ -40,9 +39,9 @@ module.exports = [
       db.set(`girisCikisKanal_${guildId}`, kanal.id);
 
       const embed = new EmbedBuilder()
-        .setTitle("Entrance-Exit Channel set! <:emoji_7:1381662606183370843>")
+        .setTitle("Entrance-Exit Channel Set! <:emoji_7:1381662606183370843>")
         .setDescription(
-          `<:emoji_17:1381662952985333861> **${kanal}** Entrance-Exit messages will now be sent to your channel.\nTo close for  : \`/entrance-Exit-Close\``
+          `<:emoji_17:1381662952985333861> Messages will now be sent to **${kanal}**.\nTo disable it, use: \`/entrance_exit_close\``
         )
         .setColor("Green")
         .setTimestamp();
@@ -51,8 +50,8 @@ module.exports = [
     },
   },
   {
-    name: "giriş-çıkış-kapat",
-    description: "Entrance-Exit Closes the message system!",
+    name: "entrance_exit_close",
+    description: "Disables the Entrance-Exit message system!",
     type: 1,
     options: [],
     run: async (client, interaction) => {
@@ -63,7 +62,7 @@ module.exports = [
       ) {
         return interaction.reply({
           content:
-            "<:no:1382108974584823978> | This command to use for  **Owner** To the authority own You must be!",
+            "<:no:1382108974584823978> | To use this command, you must have **Administrator** permission!",
           ephemeral: true,
         });
       }
@@ -73,7 +72,8 @@ module.exports = [
 
       if (!mevcutKanal) {
         return interaction.reply({
-          content: "<:no:1382108974584823978> | This Server Entrance-Exit System already set not!",
+          content:
+            "<:no:1382108974584823978> | The Entrance-Exit system is not active on this server!",
           ephemeral: true,
         });
       }
@@ -81,8 +81,8 @@ module.exports = [
       db.delete(`girisCikisKanal_${guildId}`);
 
       const embed = new EmbedBuilder()
-        .setTitle("Entrance-Exit System Closed! <:emoji_17:1381662952985333861>")
-        .setDescription("<:emoji_17:1381662952985333861> Entrance-Exit messages Now will not be sent")
+        .setTitle("Entrance-Exit System Disabled! <:emoji_17:1381662952985333861>")
+        .setDescription("<:emoji_17:1381662952985333861> Entrance-Exit messages will no longer be sent.")
         .setColor("Red")
         .setTimestamp();
 
@@ -91,10 +91,10 @@ module.exports = [
   },
 ];
 
+// Giriş mesajı
 client.on("guildMemberAdd", async (member) => {
   const guildId = member.guild.id;
   const kanalId = db.get(`girisCikisKanal_${guildId}`);
-
   if (!kanalId) return;
 
   const kanal = await member.guild.channels.fetch(kanalId).catch(() => null);
@@ -107,22 +107,19 @@ client.on("guildMemberAdd", async (member) => {
     .setTitle("<:Moderator:1381648147910099024> A new member has joined!")
     .setDescription(
       `
-      **Welcome To Nuron's Krak ${member.user.tag}!** <:emoji_7:1381662606183370843>
-      Welcome to Nuron's Krak  
-
+      **Welcome to Nuron's Krak, ${member.user.tag}!** <:emoji_7:1381662606183370843>
+      
       **User Info:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
-      <:emoji_19:1381663020559896739> **Account Creation Date;** <t:${Math.floor(member.user.createdAt / 1000)}:R>
+      <:emoji_19:1381663020559896739> **Account Created:** <t:${Math.floor(member.user.createdAt / 1000)}:R>
 
-      **Server Info :**
-      <:emoji_20:1381700870831472801> **Member Count;** ${member.guild.memberCount}
+      **Server Info:**
+      <:emoji_20:1381700870831472801> **Member Count:** ${member.guild.memberCount}
       <:emoji_16:1381662917904039986> **Server:** ${member.guild.name}
     `
     )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setImage(
-      "https://cdn.discordapp.com/attachments/1254160373133869179/1263563031774892073/ArhiBots_QjM3heKn0B.gif"
-    )
+    .setImage("https://cdn.discordapp.com/attachments/1254160373133869179/1263563031774892073/ArhiBots_QjM3heKn0B.gif")
     .setColor("#00FF00")
     .setFooter({
       text: `Welcome to Our Server!`,
@@ -133,10 +130,10 @@ client.on("guildMemberAdd", async (member) => {
   await kanal.send({ embeds: [embed] }).catch(() => {});
 });
 
+// Çıkış mesajı
 client.on("guildMemberRemove", async (member) => {
   const guildId = member.guild.id;
   const kanalId = db.get(`girisCikisKanal_${guildId}`);
-
   if (!kanalId) return;
 
   const kanal = await member.guild.channels.fetch(kanalId).catch(() => null);
@@ -149,14 +146,13 @@ client.on("guildMemberRemove", async (member) => {
     .setTitle("<:Moderator:1381648147910099024> A member left")
     .setDescription(
       `
-      **${member.user.tag}** A member left.
-      I hope you never come back to us again!
+      **${member.user.tag}** has left the server. I hope you never come back!
 
-      **Kullanıcı Bilgileri:**
+      **User Info:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
-      <:emoji_19:1381663020559896739> **Server Join Date:** <t:${Math.floor(member.joinedAt / 1000)}:R>
+      <:emoji_19:1381663020559896739> **Joined Server:** <t:${Math.floor(member.joinedAt / 1000)}:R>
 
-      **Sunucu Bilgileri:**
+      **Server Info:**
       <:emoji_20:1381700870831472801> **Member Count:** ${member.guild.memberCount}
       <:emoji_16:1381662917904039986> **Server:** ${member.guild.name}
     `
