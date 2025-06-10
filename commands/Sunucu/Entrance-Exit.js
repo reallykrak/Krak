@@ -34,7 +34,7 @@ module.exports = [
         });
       }
 
-      const kanal = interaction.options.getChannel("kanal");
+      const kanal = interaction.options.getChannel("Channel");
       const guildId = interaction.guild.id;
 
       db.set(`girisCikisKanal_${guildId}`, kanal.id);
