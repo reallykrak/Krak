@@ -104,19 +104,19 @@ client.on("guildMemberAdd", async (member) => {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle("🎉 Yeni Bir Üye Katıldı!")
+    .setTitle("<:Moderator:1381648147910099024> Yeni Bir Üye Katıldı!")
     .setDescription(
       `
       **Hoş Geldin ${member.user.tag}!** 🎊
-      Sunucumuza katıldığın için teşekkürler! 😊
+      Sunucumuza katıldığın için teşekkürler! 
 
       **Kullanıcı Bilgileri:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
-      📅 **Hesap Oluşturma:** <t:${Math.floor(member.user.createdAt / 1000)}:R>
+      <:emoji_19:1381663020559896739> **Hesap Oluşturma:** <t:${Math.floor(member.user.createdAt / 1000)}:R>
 
       **Sunucu Bilgileri:**
-      👥 **Üye Sayısı:** ${member.guild.memberCount}
-      🌐 **Sunucu:** ${member.guild.name}
+      <:emoji_20:1381700870831472801> **Üye Sayısı:** ${member.guild.memberCount}
+      <:emoji_16:1381662917904039986> **Sunucu:** ${member.guild.name}
     `
     )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
@@ -146,19 +146,19 @@ client.on("guildMemberRemove", async (member) => {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle("👋 Bir Üye Ayrıldı")
+    .setTitle("<:Moderator:1381648147910099024> Bir Üye Ayrıldı")
     .setDescription(
       `
-      **${member.user.tag}** sunucudan ayrıldı. 😔
+      **${member.user.tag}** sunucudan ayrıldı.
       Umarız tekrar aramıza dönersin!
 
       **Kullanıcı Bilgileri:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
-      📅 **Katılma Tarihi:** <t:${Math.floor(member.joinedAt / 1000)}:R>
+      <:emoji_19:1381663020559896739> **Katılma Tarihi:** <t:${Math.floor(member.joinedAt / 1000)}:R>
 
       **Sunucu Bilgileri:**
-      👥 **Üye Sayısı:** ${member.guild.memberCount}
-      🌐 **Sunucu:** ${member.guild.name}
+      <:emoji_20:1381700870831472801> **Üye Sayısı:** ${member.guild.memberCount}
+      <:emoji_16:1381662917904039986> **Sunucu:** ${member.guild.name}
     `
     )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
