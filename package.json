@@ -2,20 +2,10 @@
   "name": "discord-bot",
   "version": "1.0.0",
   "description": "Discord.js v14 Bot with Slash Commands",
-  "type": "module",
   "main": "index.js",
-  "author": "reallykrak",
-  "license": "MIT",
-  "private": true,
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/reallykrak/Krak.git"
-  },
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "axios": "^1.7.2",
@@ -27,16 +17,17 @@
     "croxydb": "^0.0.25",
     "discord.js": "^14.14.1",
     "express": "^4.18.1",
+    "fs": "^0.0.1-security",
     "gradient-string": "^2.0.2",
-    "jimp": "^0.22.8",
     "lodash.uniqwith": "^4.5.0",
     "moment": "^2.30.1",
     "moment-duration-format": "^2.3.2",
     "ora": "^7.0.1",
-    "sharp": "^0.33.4"
+    "os": "^0.1.2",
+    "sharp": "^0.33.4",
+    "jimp": "^0.22.8"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
     "nodemon": "^3.0.1"
   }
 }
