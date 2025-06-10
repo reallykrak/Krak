@@ -104,18 +104,18 @@ client.on("guildMemberAdd", async (member) => {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle("<:Moderator:1381648147910099024> Yeni Bir Üye Katıldı!")
+    .setTitle("<:Moderator:1381648147910099024> A new member has joined!")
     .setDescription(
       `
       **Hoş Geldin ${member.user.tag}!** 🎊
-      Sunucumuza katıldığın için teşekkürler! 
+      Welcome to Nuron's Krak  
 
       **Kullanıcı Bilgileri:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
-      <:emoji_19:1381663020559896739> **Hesap Oluşturma:** <t:${Math.floor(member.user.createdAt / 1000)}:R>
+      <:emoji_19:1381663020559896739> **Account Creation Date;** <t:${Math.floor(member.user.createdAt / 1000)}:R>
 
       **Sunucu Bilgileri:**
-      <:emoji_20:1381700870831472801> **Üye Sayısı:** ${member.guild.memberCount}
+      <:emoji_20:1381700870831472801> **Member Count;** ${member.guild.memberCount}
       <:emoji_16:1381662917904039986> **Sunucu:** ${member.guild.name}
     `
     )
@@ -125,7 +125,7 @@ client.on("guildMemberAdd", async (member) => {
     )
     .setColor("#00FF00")
     .setFooter({
-      text: `Sunucumuza hoş geldin!`,
+      text: `Welcome to Our Server!`,
       iconURL: member.guild.iconURL(),
     })
     .setTimestamp();
@@ -146,25 +146,25 @@ client.on("guildMemberRemove", async (member) => {
   }
 
   const embed = new EmbedBuilder()
-    .setTitle("<:Moderator:1381648147910099024> Bir Üye Ayrıldı")
+    .setTitle("<:Moderator:1381648147910099024> A member left")
     .setDescription(
       `
       **${member.user.tag}** sunucudan ayrıldı.
-      Umarız tekrar aramıza dönersin!
+      I hope you never come back to us again!
 
       **Kullanıcı Bilgileri:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
-      <:emoji_19:1381663020559896739> **Katılma Tarihi:** <t:${Math.floor(member.joinedAt / 1000)}:R>
+      <:emoji_19:1381663020559896739> **Server Join Date:** <t:${Math.floor(member.joinedAt / 1000)}:R>
 
       **Sunucu Bilgileri:**
-      <:emoji_20:1381700870831472801> **Üye Sayısı:** ${member.guild.memberCount}
-      <:emoji_16:1381662917904039986> **Sunucu:** ${member.guild.name}
+      <:emoji_20:1381700870831472801> **Member Count:** ${member.guild.memberCount}
+      <:emoji_16:1381662917904039986> **Server:** ${member.guild.name}
     `
     )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setImage("https://i.gifer.com/W1ph.gif")
+    .setImage("https://cdn.discordapp.com/attachments/1335768922389090355/1335772329069776947/gxhq7qp.gif")
     .setColor("#FF0000")
-    .setFooter({ text: `Güle güle!`, iconURL: member.guild.iconURL() })
+    .setFooter({ text: `Byee Nab`, iconURL: member.guild.iconURL() })
     .setTimestamp();
 
   await kanal.send({ embeds: [embed] }).catch(() => {});
