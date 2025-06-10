@@ -110,13 +110,13 @@ client.on("guildMemberAdd", async (member) => {
       **Hoş Geldin ${member.user.tag}!** 🎊
       Welcome to Nuron's Krak  
 
-      **Kullanıcı Bilgileri:**
+      **User Info:**
       <:emoji_19:1381663001098326167> **ID:** ${member.user.id}
       <:emoji_19:1381663020559896739> **Account Creation Date;** <t:${Math.floor(member.user.createdAt / 1000)}:R>
 
-      **Sunucu Bilgileri:**
+      **Server Info :**
       <:emoji_20:1381700870831472801> **Member Count;** ${member.guild.memberCount}
-      <:emoji_16:1381662917904039986> **Sunucu:** ${member.guild.name}
+      <:emoji_16:1381662917904039986> **Server:** ${member.guild.name}
     `
     )
     .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
@@ -149,7 +149,7 @@ client.on("guildMemberRemove", async (member) => {
     .setTitle("<:Moderator:1381648147910099024> A member left")
     .setDescription(
       `
-      **${member.user.tag}** sunucudan ayrıldı.
+      **${member.user.tag}** A member left.
       I hope you never come back to us again!
 
       **Kullanıcı Bilgileri:**
