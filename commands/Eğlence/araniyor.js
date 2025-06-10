@@ -1,5 +1,5 @@
 const { EmbedBuilder, ApplicationCommandType, ApplicationCommandOptionType, AttachmentBuilder } = require("discord.js");
-const Canvas = require("canvas");
+const Canvas = require("jimp");
 
 module.exports = {
   name: "aranıyor",
