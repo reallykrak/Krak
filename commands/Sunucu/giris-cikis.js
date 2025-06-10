@@ -8,14 +8,14 @@ const db = require("croxydb");
 
 module.exports = [
   {
-    name: "giriş-çıkış",
+    name: "Entrance-Exit",
     description:
-      "Kullanıcı giriş-çıkış mesajlarının gönderileceği kanalı ayarlar!",
+      "Sets the Entrance-Exit message!",
     type: 1,
     options: [
       {
-        name: "kanal",
-        description: "Giriş-çıkış mesajlarının gönderileceği kanal",
+        name: "Channel",
+        description: "Channel to Send Messages!",
         type: 7,
         required: true,
         channel_types: [ChannelType.GuildText],
@@ -29,7 +29,7 @@ module.exports = [
       ) {
         return interaction.reply({
           content:
-            "❌ | Bu komutu kullanmak için **Yönetici** yetkisine sahip olmalısınız!",
+            "<:no:1382108974584823978> | to use this command **Owner** to the authority own You must be!",
           ephemeral: true,
         });
       }
@@ -40,9 +40,9 @@ module.exports = [
       db.set(`girisCikisKanal_${guildId}`, kanal.id);
 
       const embed = new EmbedBuilder()
-        .setTitle("Giriş-Çıkış Kanalı Ayarlandı! 🎉")
+        .setTitle("Entrance-Exit Channel set! <:emoji_7:1381662606183370843>")
         .setDescription(
-          `✅ **${kanal}** kanalına artık kullanıcı giriş ve çıkış mesajları gönderilecek.\nKapatmak için: \`/giriş-çıkış-kapat\``
+          `<:emoji_17:1381662952985333861> **${kanal}** Entrance-Exit messages will now be sent to your channel.\nTo close for  : \`/entrance-Exit-Close\``
         )
         .setColor("Green")
         .setTimestamp();
@@ -51,8 +51,8 @@ module.exports = [
     },
   },
   {
-    name: "giriş-çıkış-kapat",
-    description: "Giriş-çıkış mesaj sistemini kapatır!",
+    name: "Entrance-Exit-Close",
+    description: "Entrance-Exit Closes the message system!",
     type: 1,
     options: [],
     run: async (client, interaction) => {
@@ -63,7 +63,7 @@ module.exports = [
       ) {
         return interaction.reply({
           content:
-            "❌ | Bu komutu kullanmak için **Yönetici** yetkisine sahip olmalısınız!",
+            "<:no:1382108974584823978> | This command to use for  **Owner** To the authority own You must be!",
           ephemeral: true,
         });
       }
@@ -73,7 +73,7 @@ module.exports = [
 
       if (!mevcutKanal) {
         return interaction.reply({
-          content: "❌ | Bu sunucuda giriş-çıkış sistemi zaten ayarlı değil!",
+          content: "<:no:1382108974584823978> | This Server Entrance-Exit System already set not!",
           ephemeral: true,
         });
       }
@@ -81,8 +81,8 @@ module.exports = [
       db.delete(`girisCikisKanal_${guildId}`);
 
       const embed = new EmbedBuilder()
-        .setTitle("Giriş-Çıkış Sistemi Kapatıldı! 🔇")
-        .setDescription("✅ Giriş-çıkış mesajları artık gönderilmeyecek.")
+        .setTitle("Entrance-Exit System Closed! <:emoji_17:1381662952985333861>")
+        .setDescription("<:emoji_17:1381662952985333861> Entrance-Exit messages Now will not be sent")
         .setColor("Red")
         .setTimestamp();
 
@@ -107,7 +107,7 @@ client.on("guildMemberAdd", async (member) => {
     .setTitle("<:Moderator:1381648147910099024> A new member has joined!")
     .setDescription(
       `
-      **Hoş Geldin ${member.user.tag}!** 🎊
+      **Welcome To Nuron's Krak ${member.user.tag}!** <:emoji_7:1381662606183370843>
       Welcome to Nuron's Krak  
 
       **User Info:**
