@@ -1,28 +1,35 @@
 import { EmbedBuilder, AttachmentBuilder, PermissionsBitField } from 'discord.js';
 import fdb from 'croxydb';
-import { CaptchaGenerator } from 'captcha-canvas';
+import Jimp from 'jimp';
 
 export const event = {
     name: 'guildMemberAdd',
     execute: async (member) => {
         try {
+            // Captcha ayarlarını al
             const captchaData = fdb.get(`captcha_${member.guild.id}`);
             if (!captchaData) return;
 
             const { channel, role } = await getChannelAndRole(member.guild, captchaData);
             if (!channel || !role) return;
 
+            // Captcha resmi ve metni üret
             const captcha = await generateCaptcha();
             if (!captcha) {
                 console.error('Captcha generation failed');
                 return;
             }
 
+            // Captcha mesajını gönder
             const message = await sendCaptchaMessage(channel, member, captcha);
             if (!message) return;
 
+            // Kullanıcının cevabını bekle
             const userResponse = await getUserResponse(channel, member);
+
+            // Gelen cevaba göre işlemleri yap
             await handleCaptchaResponse(member, channel, role, userResponse, captcha.text, message);
+
         } catch (error) {
             console.error('Error in guildMemberAdd event:', error);
             await handleCaptchaError(member, error);
@@ -38,10 +45,37 @@ async function getChannelAndRole(guild, captchaData) {
 
 async function generateCaptcha() {
     try {
-        const options = { height: 200, width: 600, noise: 5 };
-        const captcha = new CaptchaGenerator(options);
-        const text = captcha.text;
-        const buffer = await captcha.generate();
+        const width = 600;
+        const height = 200;
+
+        const image = new Jimp(width, height, 0xffffffff);
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let text = '';
+        for (let i = 0; i < 6; i++) {
+            text += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
+
+        const textWidth = Jimp.measureText(font, text);
+        const textHeight = Jimp.measureTextHeight(font, text, width);
+        image.print(font, (width - textWidth) / 2, (height - textHeight) / 2, text);
+
+        // Basit renkli gürültü (noise)
+        for (let i = 0; i < 1000; i++) {
+            const x = Math.floor(Math.random() * width);
+            const y = Math.floor(Math.random() * height);
+            const color = Jimp.rgbaToInt(
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+                Math.floor(Math.random() * 256),
+                255
+            );
+            image.setPixelColor(color, x, y);
+        }
+
+        const buffer = await image.getBufferAsync(Jimp.MIME_PNG);
         return { image: buffer, text: text };
     } catch (error) {
         console.error('Error generating captcha:', error);
@@ -154,4 +188,4 @@ async function handleCaptchaError(member, error) {
     } catch (sendError) {
         console.error('Error sending error message:', sendError);
     }
-        }
+            }
