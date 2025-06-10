@@ -55,11 +55,6 @@ module.exports = {
         avatar.resize(300, 300).circle();
       }
 
-      // Fontları yükle
-      const fontTitle = await Jimp.loadFont(path.join(__dirname, "../images/font-red-70.fnt"));
-      const fontSub = await Jimp.loadFont(path.join(__dirname, "../images/font-black-32.fnt"));
-      const fontItalic = await Jimp.loadFont(path.join(__dirname, "../images/font-black-italic-35.fnt"));
-
       // "ARANIYOR" başlığı
       poster.print(fontTitle, 0, 60, {
         text: "ARANIYOR",
