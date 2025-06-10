@@ -8,7 +8,7 @@
   "private": true,
   "repository": {
     "type": "git",
-    "url": ""
+    "url": "https://github.com/reallykrak/Krak.git"
   },
   "scripts": {
     "start": "node index.js",
