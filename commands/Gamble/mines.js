@@ -38,7 +38,7 @@ ${infoEmoji} **How to Play**
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId("mines_balance")
-        .setLabel(`${byteCoinEmoji} Balance`)
+        .setLabel(`<:emoji_28:1382326426392330251> Balance`)
         .setStyle(ButtonStyle.Primary)
     );
 
