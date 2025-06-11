@@ -7,7 +7,7 @@ const {
 
 module.exports = {
   name: "mines",
-  description: "💣 Mines oyununu başlat (Coming Soon...)",
+  description: "💣 Start Mines game (Coming Soon...)",
   type: 1,
   options: [],
   
