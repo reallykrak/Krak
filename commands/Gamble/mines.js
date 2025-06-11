@@ -28,17 +28,20 @@ ${infoEmoji} **How to Play**
 
 \`PixelLuck best of all 💫\`
       `)
-      .setColor("#FFD700") // altın sarısı
+      .setColor("#FFD700")
       .setFooter({ text: "Coming Soon..." });
 
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId("mines_play")
-        .setLabel("🎮 Play")
+        .setLabel("Play")
+        .setEmoji("🎮")
         .setStyle(ButtonStyle.Success),
+
       new ButtonBuilder()
         .setCustomId("mines_balance")
-        .setLabel(`<:emoji_28:1382326426392330251> Balance`)
+        .setLabel("Balance")
+        .setEmoji("emoji_28:1382326426392330251") // sadece adı + ID
         .setStyle(ButtonStyle.Primary)
     );
 
