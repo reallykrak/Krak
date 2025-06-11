@@ -73,7 +73,25 @@ module.exports = {
       }
     }
 
+    // 👇 Buraya butonlara tepki ekliyoruz
     if (interaction.isButton()) {
+      const { customId } = interaction;
+
+      if (customId === "mines_play") {
+        return interaction.reply({
+          content: "🎮 **Mines oyunu yakında geliyor!** Takipte kal...",
+          ephemeral: true,
+        });
+      }
+
+      if (customId === "mines_balance") {
+        return interaction.reply({
+          content: "💰 **Bakiye sistemi çok yakında aktif olacak!**",
+          ephemeral: true,
+        });
+      }
+
+      // Diğer butonlar buraya eklenebilir...
     }
   },
 };
