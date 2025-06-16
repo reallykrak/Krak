@@ -24,7 +24,7 @@
     "moment-duration-format": "^2.3.2",
     "ora": "^7.0.1",
     "os": "^0.1.2",
-    "sharp": "^0.33.4",
+    "sharp": "^0.33.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
