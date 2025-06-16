@@ -43,12 +43,6 @@ module.exports = {
       required: true,
       channel_types: [ChannelType.GuildText],
     },
-    {
-      name: "destek_yetkilisi",
-      description: "Destek taleplerini yönetecek yetkili rolü.",
-      type: ApplicationCommandOptionType.Role,
-      required: true,
-    },
   ],
 
   run: async (client, interaction) => {
@@ -67,12 +61,11 @@ module.exports = {
     const kanal = interaction.options.getChannel("kanal");
     const embedMesaj = interaction.options.getString("embedmesaj");
     const logKanal = interaction.options.getChannel("logkanal");
-    const yetkiliRol = interaction.options.getRole("destek_yetkilisi");
 
-    if (!kanal || !logKanal || !yetkiliRol) {
+    if (!kanal || !logKanal) {
       return interaction.reply({
         content:
-          "❌ | Belirtilen kanallar veya roller bulunamadı. Lütfen geçerli seçimler yapın.",
+          "❌ | Belirtilen kanallar bulunamadı. Lütfen geçerli seçimler yapın.",
         ephemeral: true,
       });
     }
@@ -81,7 +74,6 @@ module.exports = {
       kanal: kanal.id,
       embedMesaj: embedMesaj,
       logKanal: logKanal.id,
-      yetkiliRolId: yetkiliRol.id,
     });
 
     // Sunucu için ticket sayacını sıfırla veya başlat
@@ -127,7 +119,7 @@ module.exports = {
       db.set(`destek_sistemi_${interaction.guild.id}.mesajId`, mesaj.id);
 
       await interaction.reply({
-        content: `✅ | Destek sistemi başarıyla ${kanal} kanalına kuruldu! Loglar ${logKanal}'a gönderilecek ve ${yetkiliRol} rolü talepleri yönetebilecek.`,
+        content: `✅ | Destek sistemi başarıyla ${kanal} kanalına kuruldu! Loglar ${logKanal}'a gönderilecek.`,
         ephemeral: true,
       });
     } catch (error) {
@@ -192,7 +184,7 @@ client.on("interactionCreate", async (interaction) => {
     interaction.customId === "destek_talep_modal"
   ) {
     const sistemVeri = db.get(`destek_sistemi_${interaction.guild.id}`);
-    if (!sistemVeri || !sistemVeri.logKanal || !sistemVeri.yetkiliRolId) {
+    if (!sistemVeri || !sistemVeri.logKanal) {
       return interaction.reply({
         content:
           "❌ | Destek sistemi düzgün yapılandırılmamış. Lütfen bir yönetici ile görüşün.",
@@ -201,11 +193,10 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     const logKanal = interaction.guild.channels.cache.get(sistemVeri.logKanal);
-    const yetkiliRol = interaction.guild.roles.cache.get(sistemVeri.yetkiliRolId);
 
-    if (!logKanal || !yetkiliRol) {
+    if (!logKanal) {
       return interaction.reply({
-        content: "❌ | Log kanalı veya yetkili rolü bulunamadı. Lütfen sistemi yeniden kurun.",
+        content: "❌ | Log kanalı bulunamadı. Lütfen sistemi yeniden kurun.",
         ephemeral: true,
       });
     }
@@ -230,10 +221,6 @@ client.on("interactionCreate", async (interaction) => {
                     {
                         id: client.user.id,
                         allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.ManageChannels],
-                    },
-                    {
-                        id: yetkiliRol.id,
-                        allow: [PermissionsBitField.Flags.ViewChannel],
                     },
                 ],
             });
@@ -262,16 +249,6 @@ client.on("interactionCreate", async (interaction) => {
             ],
           },
           {
-             id: yetkiliRol.id,
-             allow: [
-                PermissionsBitField.Flags.ViewChannel,
-                PermissionsBitField.Flags.SendMessages,
-                PermissionsBitField.Flags.ReadMessageHistory,
-                PermissionsBitField.Flags.AttachFiles,
-                PermissionsBitField.Flags.ManageMessages,
-             ]
-          },
-          {
             id: client.user.id,
             allow: [
               PermissionsBitField.Flags.ViewChannel,
@@ -295,7 +272,7 @@ client.on("interactionCreate", async (interaction) => {
       const kanalEmbed = new EmbedBuilder()
         .setTitle("📬 | Yeni Destek Talebi")
         .setDescription(
-          `Merhaba ${interaction.user}, destek talebiniz oluşturuldu! ${yetkiliRol} rolündeki ekibimiz en kısa sürede size yardımcı olacak.`
+          `Merhaba ${interaction.user}, destek talebiniz oluşturuldu! Yetkili ekibimiz en kısa sürede size yardımcı olacak.`
         )
         .addFields([
           { name: "📝 Konu", value: `\`${konu}\``, inline: true },
@@ -366,7 +343,7 @@ client.on("interactionCreate", async (interaction) => {
       );
 
       await destekKanal.send({
-        content: `${interaction.user} ${yetkiliRol}`,
+        content: `${interaction.user}`,
         embeds: [kanalEmbed],
         components: [row],
       });
@@ -402,9 +379,9 @@ client.on("interactionCreate", async (interaction) => {
 
   // Destek yönetim menüsü
   if (interaction.isSelectMenu() && interaction.customId === "destek_yonetim") {
-    const sistemVeri = db.get(`destek_sistemi_${interaction.guild.id}`);
-    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels) && !interaction.member.roles.cache.has(sistemVeri?.yetkiliRolId)) {
-        return interaction.reply({ content: "❌ | Bu menüyü kullanmak için `Kanalları Yönet` yetkisine veya destek yetkilisi rolüne sahip olmalısınız!", ephemeral: true });
+    // Sadece "Kanalları Yönet" yetkisi olanlar veya bot yöneticisi kullanabilir
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+        return interaction.reply({ content: "❌ | Bu menüyü kullanmak için `Kanalları Yönet` yetkisine sahip olmalısınız!", ephemeral: true });
     }
 
     const talepSahibiId = db.get(`destek_kanal_id_${interaction.channel.id}`);
@@ -415,6 +392,7 @@ client.on("interactionCreate", async (interaction) => {
         });
     }
 
+    const sistemVeri = db.get(`destek_sistemi_${interaction.guild.id}`);
     const logKanal = sistemVeri?.logKanal
       ? interaction.guild.channels.cache.get(sistemVeri.logKanal)
       : null;
@@ -621,9 +599,9 @@ client.on("interactionCreate", async (interaction) => {
   const handleModalSubmit = async (customId, action) => {
     if (interaction.type !== InteractionType.ModalSubmit || interaction.customId !== customId) return;
     
-    const sistemVeri = db.get(`destek_sistemi_${interaction.guild.id}`);
-    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels) && !interaction.member.roles.cache.has(sistemVeri?.yetkiliRolId)) {
-        return; // Yetki yoksa işlem yapma
+    // Yalnızca "Kanalları Yönet" yetkisi olanlar veya bot yöneticisi işlem yapabilir
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageChannels)) {
+        return; 
     }
     await action();
   };
@@ -646,7 +624,7 @@ client.on("interactionCreate", async (interaction) => {
       
       const logKanal = db.get(`destek_sistemi_${interaction.guild.id}`)?.logKanal;
       if (logKanal) {
-        // ... Loglama kodu ...
+        // Loglama kodu buraya eklenebilir
       }
     } catch (error) {
       console.error(error);
@@ -675,7 +653,7 @@ client.on("interactionCreate", async (interaction) => {
 
       const logKanal = db.get(`destek_sistemi_${interaction.guild.id}`)?.logKanal;
       if (logKanal) {
-        // ... Loglama kodu ...
+        // Loglama kodu buraya eklenebilir
       }
     } catch (error) {
       console.error(error);
@@ -711,7 +689,7 @@ client.on("interactionCreate", async (interaction) => {
 
         const logKanalId = db.get(`destek_sistemi_${interaction.guild.id}`)?.logKanal;
         if (logKanalId) {
-            // ... Loglama kodu ...
+            // Loglama kodu buraya eklenebilir
         }
     } catch (error) {
         console.error("Kullanıcıya DM gönderilemedi (Modal):", error);
