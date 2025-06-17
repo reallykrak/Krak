@@ -6,7 +6,7 @@ const { loadCommands } = require("./function/commandLoader");
 
 // YENİ: Destek sisteminin etkileşimlerini yönetecek fonksiyonu içeri aktarıyoruz.
 // Lütfen dosya yolunun doğru olduğundan emin olun.
-const { handleInteractions } = require("./commands/Genel/destek-ayarla.js");
+const { handleInteractions } = require("./commands/Genel/destek-sistemi.js");
 
 const client = new Client({
   intents: [
