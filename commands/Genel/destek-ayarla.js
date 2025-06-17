@@ -384,10 +384,9 @@ client.on("interactionCreate", async (interaction) => {
 
                 const logRow = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
-                        .setCustomId("kaydet_mesajlar") // Bu butonun customId'si önemli
-                        .setLabel("Mesajlar")
-                        .setStyle(ButtonStyle.Link) // Link style butonu oluştur, URL'yi dinamik olarak ayarlayacağız
-                        .setURL(`attachment://${logFileName}`) // Geçici olarak URL'yi ayarla, sonra dosya ile birlikte göndereceğiz
+                        .setCustomId("mesajlari_goster") // Buton ID'si
+                        .setLabel("Mesajlar") // Buton etiketi
+                        .setStyle(ButtonStyle.Secondary) // Gri renkli işlem butonu
                 );
 
                 await logKanal.send({ 
