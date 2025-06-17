@@ -231,6 +231,7 @@ client.on("interactionCreate", async (interaction) => {
         aciklama: aciklama,
         acilisZamani: Date.now(),
         handlerId: null, // Talebi devralan yetkili
+        voiceChannelId: null, // Sesli destek kanalı ID'si
       });
       db.set(`destek_user_open_${guild.id}_${user.id}`, destekKanal.id);
 
@@ -261,11 +262,17 @@ client.on("interactionCreate", async (interaction) => {
           ])
       );
 
-      const sistemRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId("sistem_yonet_buton").setLabel("Sistemi Yönet").setStyle(ButtonStyle.Secondary).setEmoji("⚙️")
+      const sistemRowButtons1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("sesli_destek_toggle").setLabel("Sesli Destek Aç/Kapat").setStyle(ButtonStyle.Secondary).setEmoji("📞"),
+        new ButtonBuilder().setCustomId("yavas_mod_ayarla").setLabel("Yavaş Mod").setStyle(ButtonStyle.Secondary).setEmoji("⏱️")
+      );
+
+      const sistemRowButtons2 = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId("devral").setLabel("Talebi Devral").setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId("devret").setLabel("Talebi Devret").setStyle(ButtonStyle.Secondary)
       )
 
-      await destekKanal.send({ content: `${user}, ${yetkiliRol}`, embeds: [kanalEmbed], components: [yonetimRow, sistemRow] });
+      await destekKanal.send({ content: `${user}, ${yetkiliRol}`, embeds: [kanalEmbed], components: [yonetimRow, sistemRowButtons1, sistemRowButtons2] });
 
       const logEmbed = new EmbedBuilder()
         .setTitle("📋 | Yeni Destek Talebi")
@@ -296,11 +303,11 @@ client.on("interactionCreate", async (interaction) => {
   
   if (!yetkiKontrol()) {
     // Sadece yetkililerin kullanabileceği butonlara basarsa uyarı ver
-    const yetkiliCustomIds = ["sistem_yonet_buton", "devral", "devret", "cikar_uye_", "ekle_uye_"]; // Add 'ekle_uye_'
+    const yetkiliCustomIds = ["sesli_destek_toggle", "yavas_mod_ayarla", "devral", "devret", "cikar_uye_", "ekle_uye_"]; 
     if (interaction.isButton() && (yetkiliCustomIds.some(id => customId.startsWith(id)) || customId === "devret_menu")) {
         return interaction.reply({ content: "❌ | Bu işlemi sadece yetkililer yapabilir.", ephemeral: true });
     }
-    if (interaction.isAnySelectMenu() && (customId === "destek_yonetim_menu" || customId === "uye_ekle_menu")) { // Add 'uye_ekle_menu'
+    if (interaction.isAnySelectMenu() && (customId === "destek_yonetim_menu" || customId === "uye_ekle_menu" || customId === "yavas_mod_menu" || customId === "devret_menu")) { 
         return interaction.reply({ content: "❌ | Bu menüyü sadece yetkililer kullanabilir.", ephemeral: true });
     }
   }
@@ -326,6 +333,10 @@ client.on("interactionCreate", async (interaction) => {
                     await channel.delete();
                     db.delete(`destek_user_open_${guild.id}_${talepSahibiId}`);
                     db.delete(`destek_kanal_by_channel_${channel.id}`);
+                    if (ticketData.voiceChannelId) {
+                        const voiceChannel = guild.channels.cache.get(ticketData.voiceChannelId);
+                        if (voiceChannel) await voiceChannel.delete().catch(e => console.error("Ses kanalı silinemedi:", e));
+                    }
                     // Loglama vs.
                 } catch(e) { console.error("Kanal silinemedi:", e)}
             }, 5000);
@@ -403,6 +414,9 @@ client.on("interactionCreate", async (interaction) => {
                 .setColor("Blue")
                 .setFooter({ text: config.footer || "Destek Sistemi" })
                 .setTimestamp();
+            if (ticketData.voiceChannelId) {
+                infoEmbed.addFields({ name: "📞 Sesli Destek Kanalı", value: `<#${ticketData.voiceChannelId}>`, inline: false });
+            }
             await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
             break;
         case "dm_gonder":
@@ -468,17 +482,119 @@ client.on("interactionCreate", async (interaction) => {
         await interaction.reply({ content: `✅ | Mesaj başarıyla <@${talepSahibi.id}> kullanıcısına gönderildi.`, ephemeral: true });
     } catch (error) {
         console.error("DM gönderilirken hata:", error);
-        await interaction.reply({ content: "❌ | Kullanıcıya DM gönderilirken bir hata oluştu. Kullanıcının DM'leri kapalı olabilir.", ephemeral: true });
+        await interaction.reply({ content: "❌ | Kullanıcının DM'leri kapalı olabilir veya bir hata oluştu.", ephemeral: true });
     }
   }
 
+  // SESLİ DESTEK AÇ/KAPAT BUTONU
+  if (interaction.isButton() && customId === "sesli_destek_toggle") {
+    const { talepSahibiId } = ticketData;
+    const talepSahibi = await guild.members.fetch(talepSahibiId).catch(() => null);
+    if (!talepSahibi) {
+      return interaction.reply({ content: "❌ | Talep sahibi bulunamadı.", ephemeral: true });
+    }
+
+    if (ticketData.voiceChannelId) {
+      // Sesli kanal zaten varsa kapat
+      const voiceChannel = guild.channels.cache.get(ticketData.voiceChannelId);
+      if (voiceChannel) {
+        try {
+          await voiceChannel.delete();
+          db.set(`destek_kanal_by_channel_${channel.id}.voiceChannelId`, null);
+          await interaction.reply({ content: `✅ | Sesli destek kanalı kapatıldı.`, ephemeral: true });
+          await channel.send({ embeds: [new EmbedBuilder().setColor("Red").setDescription(`📞 | Sesli destek kanalı <@${user.id}> tarafından kapatıldı.`)] });
+        } catch (error) {
+          console.error("Sesli kanal silinirken hata:", error);
+          await interaction.reply({ content: "❌ | Sesli destek kanalı kapatılırken bir hata oluştu.", ephemeral: true });
+        }
+      } else {
+          db.set(`destek_kanal_by_channel_${channel.id}.voiceChannelId`, null); // Veritabanında kalıntı kalmışsa temizle
+          await interaction.reply({ content: "❌ | Sesli destek kanalı bulunamadı, veritabanı temizlendi.", ephemeral: true });
+      }
+    } else {
+      // Sesli kanal yoksa aç
+      try {
+        const voiceChannel = await guild.channels.create({
+          name: `VoiceSupport-${talepSahibi.user.username}`,
+          type: ChannelType.GuildVoice,
+          parent: channel.parentId,
+          permissionOverwrites: [
+            {
+              id: guild.id,
+              deny: [PermissionsBitField.Flags.ViewChannel],
+            },
+            {
+              id: talepSahibi.id,
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak],
+            },
+            {
+              id: sistemVeri.yetkiliRol,
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak],
+            },
+            {
+              id: client.user.id,
+              allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak, PermissionsBitField.Flags.MoveMembers, PermissionsBitField.Flags.ManageChannels],
+            },
+          ],
+        });
+        db.set(`destek_kanal_by_channel_${channel.id}.voiceChannelId`, voiceChannel.id);
+        await interaction.reply({ content: `✅ | Sesli destek kanalı <#${voiceChannel.id}> başarıyla açıldı.`, ephemeral: true });
+        await channel.send({ embeds: [new EmbedBuilder().setColor("Green").setDescription(`📞 | Sesli destek kanalı <#${voiceChannel.id}> <@${user.id}> tarafından açıldı.`)
+        .addFields({ name: "ℹ️ Nasıl Çalışır?", value: "Bu kanala katılarak yetkililerle sesli görüşme yapabilirsiniz.", inline: false })] });
+      } catch (error) {
+        console.error("Sesli kanal oluşturulurken hata:", error);
+        await interaction.reply({ content: "❌ | Sesli destek kanalı oluşturulurken bir hata oluştu.", ephemeral: true });
+      }
+    }
+  }
+
+  // YAVAŞ MOD AYARLA BUTONU
+  if (interaction.isButton() && customId === "yavas_mod_ayarla") {
+    const slowmodeOptions = [
+      { label: "Kapat (0 saniye)", value: "0" },
+      { label: "5 Saniye", value: "5" },
+      { label: "10 Saniye", value: "10" },
+      { label: "15 Saniye", value: "15" },
+      { label: "30 Saniye", value: "30" },
+      { label: "1 Dakika", value: "60" },
+      { label: "2 Dakika", value: "120" },
+      { label: "5 Dakika", value: "300" },
+      { label: "10 Dakika", value: "600" },
+      { label: "15 Dakika", value: "900" },
+      { label: "30 Dakika", value: "1800" },
+      { label: "1 Saat", value: "3600" },
+      { label: "2 Saat", value: "7200" },
+      { label: "6 Saat", value: "21600" },
+    ];
+
+    const slowmodeMenu = new StringSelectMenuBuilder()
+      .setCustomId("yavas_mod_menu")
+      .setPlaceholder("Yavaş mod süresini seçin")
+      .addOptions(slowmodeOptions);
+
+    const row = new ActionRowBuilder().addComponents(slowmodeMenu);
+    await interaction.reply({ content: "Kanal için yavaş mod süresini seçin:", components: [row], ephemeral: true });
+  }
+
+  // YAVAŞ MOD MENÜ SEÇİMİ
+  if (interaction.isStringSelectMenu() && customId === "yavas_mod_menu") {
+    const selectedSlowmode = parseInt(interaction.values[0]);
+    try {
+      await channel.setRateLimitPerUser(selectedSlowmode);
+      await interaction.update({ content: `✅ | Kanalın yavaş modu ${selectedSlowmode === 0 ? "kapatıldı" : `${selectedSlowmode} saniyeye ayarlandı`}.`, components: [] });
+      await channel.send({ embeds: [new EmbedBuilder().setColor("Blue").setDescription(`⏱️ | Kanalın yavaş modu <@${user.id}> tarafından ${selectedSlowmode === 0 ? "kapatıldı" : `**${selectedSlowmode} saniyeye** ayarlandı`}.`)] });
+    } catch (error) {
+      console.error("Yavaş mod ayarlanırken hata:", error);
+      await interaction.update({ content: "❌ | Yavaş mod ayarlanırken bir hata oluştu.", components: [] });
+    }
+  }
+
+
   // SİSTEM YÖNET BUTONU (Devral/Devret)
   if (interaction.isButton() && customId === "sistem_yonet_buton") {
-    const sistemButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("devral").setLabel("Talebi Devral").setStyle(ButtonStyle.Success),
-        new ButtonBuilder().setCustomId("devret").setLabel("Talebi Devret").setStyle(ButtonStyle.Secondary)
-    );
-    await interaction.reply({ content: "Lütfen yapmak istediğiniz işlemi seçin:", components: [sistemButtons], ephemeral: true });
+    // This button is no longer explicitly used for devral/devret, but the customId is still valid.
+    // The devral/devret buttons are now directly on the initial message.
+    await interaction.reply({ content: "Lütfen yapmak istediğiniz işlemi seçin:", ephemeral: true });
   }
 
   // TALEBİ DEVRAL BUTONU
@@ -547,4 +663,4 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-});                                                       
+});
