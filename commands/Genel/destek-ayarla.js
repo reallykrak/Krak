@@ -47,7 +47,7 @@ module.exports = {
     {
         name: "yetkilirol",
         description: "Destek taleplerini görebilecek yetkili rolü.",
-        type: ApplicationCommandOptionType.Role,
+        type: ApplicationCommandOptionOptionType.Role,
         required: true,
     }
   ],
@@ -249,15 +249,32 @@ client.on("interactionCreate", async (interaction) => {
         .setTimestamp();
       
       // Tek bir "Sistem Ayarları" butonu ekle
-      const sistemAyarlariRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId("sistem_ayarlari_ac")
-          .setLabel("Sistem Ayarları")
-          .setStyle(ButtonStyle.Secondary)
-          .setEmoji("⚙️")
+      const yonetimRow = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId("destek_yonetim_menu")
+          .setPlaceholder("Yetkili İşlemleri")
+          .addOptions([
+            { label: "Talebi Kapat", description: "Destek talebini kapatır ve kanalı siler.", value: "kapat", emoji: "✖️" },
+            { label: "Üye Ekle", description: "Ticketa bir üye ekler.", value: "uye_ekle", emoji: "➕" },
+            { label: "Üye Çıkart", description: "Tickettan bir üye çıkartır.", value: "uye_cikar", emoji: "➖" },
+            { label: "Talebi Kilitle", description: "Kullanıcının kanala mesaj yazmasını engeller.", value: "kilitle", emoji: "🔐" },
+            { label: "Talebin Kilidini Aç", description: "Kullanıcının kanala yeniden mesaj yazmasını sağlar.", value: "kilit_ac", emoji: "🔓" },
+            { label: "Talep Bilgisi", description: "Talep detaylarını gösterir.", value: "bilgi", emoji: "ℹ️" },
+            { label: "Kullanıcıya DM Gönder", description: "Talep sahibine özel mesaj gönderir.", value: "dm_gonder", emoji: "📩" }
+          ])
       );
 
-      await destekKanal.send({ content: `${user}, ${yetkiliRol}`, embeds: [kanalEmbed], components: [sistemAyarlariRow] });
+      const sistemRowButtons1 = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("sesli_destek_toggle").setLabel("Sesli Destek Aç/Kapat").setStyle(ButtonStyle.Secondary).setEmoji("📞"),
+        new ButtonBuilder().setCustomId("yavas_mod_ayarla").setLabel("Yavaş Mod").setStyle(ButtonStyle.Secondary).setEmoji("⏱️")
+      );
+
+      const sistemRowButtons2 = new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId("devral").setLabel("Talebi Devral").setStyle(ButtonStyle.Success),
+          new ButtonBuilder().setCustomId("devret").setLabel("Talebi Devret").setStyle(ButtonStyle.Secondary)
+      )
+
+      await destekKanal.send({ content: `${user}, ${yetkiliRol}`, embeds: [kanalEmbed], components: [yonetimRow, sistemRowButtons1, sistemRowButtons2] });
 
       const logEmbed = new EmbedBuilder()
         .setTitle("📋 | Yeni Destek Talebi")
@@ -286,12 +303,15 @@ client.on("interactionCreate", async (interaction) => {
     return member.roles.cache.has(yetkiliRolId) || member.permissions.has(PermissionsBitField.Flags.ManageChannels);
   };
   
-  if (!yetkiKontrol() && customId !== "sistem_ayarlari_ac") { // "sistem_ayarlari_ac" butonunu yetki kontrolünden muaf tut
-    const yetkiliCustomIds = ["sesli_destek_toggle", "yavas_mod_ayarla", "devral", "devret", "cikar_uye_", "ekle_uye_", "kaydet_mesajlar"]; 
-    if (interaction.isButton() && (yetkiliCustomIds.some(id => customId.startsWith(id)) || customId === "devret_menu")) {
+  // "sistem_ayarlari_ac" butonu kaldırıldığı için yetki kontrolünden muaf tutma kısmı güncellendi.
+  const yetkiliCustomIds = ["sesli_destek_toggle", "yavas_mod_ayarla", "devral", "devret", "cikar_uye_", "ekle_uye_", "kaydet_mesajlar", "mesajlari_goster"]; 
+  if (interaction.isButton() && (yetkiliCustomIds.some(id => customId.startsWith(id)) || customId === "devret_menu")) {
+    if (!yetkiKontrol() && customId !== "mesajlari_goster") { // mesajlari_goster butonu staff için
         return interaction.reply({ content: "❌ | Bu işlemi sadece yetkililer yapabilir.", ephemeral: true });
     }
-    if (interaction.isAnySelectMenu() && (customId === "destek_yonetim_menu" || customId === "uye_ekle_menu" || customId === "yavas_mod_menu" || customId === "devret_menu")) { 
+  }
+  if (interaction.isAnySelectMenu() && (customId === "destek_yonetim_menu" || customId === "uye_ekle_menu" || customId === "yavas_mod_menu" || customId === "devret_menu")) { 
+    if (!yetkiKontrol()) {
         return interaction.reply({ content: "❌ | Bu menüyü sadece yetkililer kullanabilir.", ephemeral: true });
     }
   }
@@ -301,40 +321,6 @@ client.on("interactionCreate", async (interaction) => {
      // Ticket kanalı dışındaki etkileşimleri burada ele alabiliriz, şimdilik boş
   }
 
-  // SİSTEM AYARLARI BUTONU
-  if (interaction.isButton() && customId === "sistem_ayarlari_ac") {
-      if (!yetkiKontrol()) {
-          return interaction.reply({ content: "❌ | Bu menüyü sadece yetkililer kullanabilir.", ephemeral: true });
-      }
-
-      const yonetimRow = new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId("destek_yonetim_menu")
-          .setPlaceholder("Yetkili İşlemleri")
-          .addOptions([
-            { label: "Talebi Kapat", description: "Destek talebini kapatır ve kanalı siler.", value: "kapat", emoji: "✖️" },
-            { label: "Üye Ekle", description: "Ticketa bir üye ekler.", value: "uye_ekle", emoji: "➕" },
-            { label: "Üye Çıkart", description: "Tickettan bir üye çıkartır.", value: "uye_cikar", emoji: "➖" },
-            { label: "Talebi Kilitle", description: "Kullanıcının kanala mesaj yazmasını engeller.", value: "kilitle", emoji: "🔐" },
-            { label: "Talebin Kilidini Aç", description: "Kullanıcının kanala yeniden mesaj yazmasını sağlar.", value: "kilit_ac", emoji: "🔓" },
-            { label: "Talep Bilgisi", description: "Talep detaylarını gösterir.", value: "bilgi", emoji: "ℹ️" },
-            { label: "Kullanıcıya DM Gönder", description: "Talep sahibine özel mesaj gönderir.", value: "dm_gonder", emoji: "📩" }
-          ])
-      );
-
-      const sistemRowButtons1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("sesli_destek_toggle").setLabel("Sesli Destek Aç/Kapat").setStyle(ButtonStyle.Secondary).setEmoji("📞"),
-        new ButtonBuilder().setCustomId("yavas_mod_ayarla").setLabel("Yavaş Mod").setStyle(ButtonStyle.Secondary).setEmoji("⏱️")
-      );
-
-      const sistemRowButtons2 = new ActionRowBuilder().addComponents(
-          new ButtonBuilder().setCustomId("devral").setLabel("Talebi Devral").setStyle(ButtonStyle.Success),
-          new ButtonBuilder().setCustomId("devret").setLabel("Talebi Devret").setStyle(ButtonStyle.Secondary)
-      )
-
-      await interaction.reply({ content: "Lütfen yapmak istediğiniz işlemi seçin:", components: [yonetimRow, sistemRowButtons1, sistemRowButtons2], ephemeral: true });
-  }
-  
   // ANA YÖNETİM MENÜSÜ
   if (interaction.isStringSelectMenu() && customId === "destek_yonetim_menu") {
     const selectedValue = interaction.values[0];
@@ -373,7 +359,7 @@ client.on("interactionCreate", async (interaction) => {
                 const logEmbed = new EmbedBuilder()
                     .setColor("#FF0000")
                     .setTitle(`Ticket Kapatıldı`)
-                    .setDescription(`**#${channel.name}** isimli ticket kapatıldı ve mesajlar loglandı.`)
+                    .setDescription(`**#${channel.name}** isimli ticket kapatıldı.`)
                     .addFields([
                         { name: "Müşteri", value: `<@${talepSahibiId}>`, inline: true },
                         { name: "Kapatan", value: `<@${kapatanYetkili.id}>`, inline: true },
@@ -384,19 +370,18 @@ client.on("interactionCreate", async (interaction) => {
 
                 const logRow = new ActionRowBuilder().addComponents(
                     new ButtonBuilder()
-                        .setCustomId("mesajlari_goster") // Buton ID'si
+                        .setCustomId(`mesajlari_goster_${logFileName}`) // Buton ID'sine dosya adını ekle
                         .setLabel("Mesajlar") // Buton etiketi
                         .setStyle(ButtonStyle.Secondary) // Gri renkli işlem butonu
                 );
 
                 await logKanal.send({ 
                     embeds: [logEmbed], 
-                    components: [logRow], 
-                    files: [{ attachment: logFileName, name: logFileName }] 
+                    components: [logRow]
                 });
             }
 
-            // Kullanıcıya DM olarak log gönder
+            // Kullanıcıya DM olarak log gönder (bu kısım önceki isteğe göre kalabilir veya kaldırılabilir)
             try {
                 const dmEmbed = new EmbedBuilder()
                     .setColor("#FF0000")
@@ -415,7 +400,11 @@ client.on("interactionCreate", async (interaction) => {
             }
             
             // Dosyayı sil
-            fs.unlinkSync(logFileName);
+            setTimeout(() => {
+                fs.unlink(logFileName, (err) => {
+                    if (err) console.error("Log dosyası silinirken hata:", err);
+                });
+            }, 10000); // 10 saniye sonra sil
 
             setTimeout(async () => {
                 try {
@@ -737,6 +726,21 @@ client.on("interactionCreate", async (interaction) => {
         console.error("Üye çıkarılamadı:", error);
         await interaction.update({ content: "❌ | Üye çıkarılırken bir hata oluştu.", components: [] });
     }
+  }
+
+  // MESAJLARI GÖSTER BUTONU (LOG KANALINDA)
+  if (interaction.isButton() && customId.startsWith("mesajlari_goster_")) {
+      const logFileName = customId.split("_")[2]; // logFileName'ı customId'den al
+      try {
+          if (fs.existsSync(logFileName)) {
+              await interaction.reply({ files: [{ attachment: logFileName, name: logFileName }], ephemeral: true });
+          } else {
+              await interaction.reply({ content: "❌ | Mesaj kayıt dosyası bulunamadı veya silinmiş.", ephemeral: true });
+          }
+      } catch (error) {
+          console.error("Mesajlar dosyası gönderilirken hata:", error);
+          await interaction.reply({ content: "❌ | Mesajları gönderirken bir hata oluştu.", ephemeral: true });
+      }
   }
 
 });
