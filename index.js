@@ -4,9 +4,9 @@ const config = require("./config.json");
 const { loadEvents } = require("./function/eventLoader");
 const { loadCommands } = require("./function/commandLoader");
 
-// YENİ: Destek sisteminin etkileşimlerini yönetecek fonksiyonu içeri aktarıyoruz.
-// Lütfen dosya yolunun doğru olduğundan emin olun.
-const { handleInteractions } = require("./commands/Genel/destek-ayarla.js");
+// GEREKLİ: Komutları veya özel etkileşimleri yöneten dosyalar import edilecekse,
+// onların doğrudan bir `handleInteractions` fonksiyonu export ettiğinden emin olun.
+const destekKomut = require("./commands/Genel/destek-ayarla.js"); // Bu komut bir modül olduğu için export'u doğru tanımak gerek.
 
 const client = new Client({
   intents: [
@@ -32,36 +32,27 @@ global.client = client;
 loadEvents(client);
 loadCommands(client);
 
-// YENİ: Sunucudaki tüm etkileşimleri (komut, buton, menü vb.) dinlemek için olay dinleyicisi.
 client.on('interactionCreate', async (interaction) => {
-    // Sizin mevcut komut sisteminiz büyük ihtimalle 'events' klasörünüzdeki bir dosyada
-    // benzer bir mantıkla çalışıyordur. Buradaki temel amaç, komutlar dışındaki
-    // buton ve menü gibi etkileşimleri de yakalamaktır.
+  if (!interaction.guild) return;
 
-    // Destek sisteminin buton, menü ve modal gibi etkileşimlerini yönetir.
-    // Bu fonksiyon, sadece destek sistemine ait customId'lere sahip etkileşimlerle ilgilenir.
-    if (interaction.guild) { // Etkileşimlerin sadece sunucu içinde olduğundan emin olalım
-        handleInteractions(interaction);
-    }
+  // Slash komut kontrolü
+  if (interaction.isChatInputCommand()) {
+    const command = client.commands.get(interaction.commandName);
+    if (!command) return;
 
-    // Normal slash komutlarınızı çalıştırmak için (eğer event loader'ınız bunu zaten yapmıyorsa)
-    // aşağıdaki gibi bir bloğa ihtiyacınız olabilir. Genellikle bu tür bir kod
-    // 'events/interactionCreate.js' gibi bir dosyada bulunur.
-    if (interaction.isCommand()) {
-        const command = client.commands.get(interaction.commandName);
-        if (command) {
-            try {
-                // Komutun kendi 'run' veya 'execute' fonksiyonunu çağırır.
-                // Eğer komutlarınız 'destek-ayarla.js' dosyasındaki gibi 'run' metodu kullanıyorsa bu satır doğrudur.
-                await command.run(client, interaction);
-            } catch (error) {
-                console.error(`Komut çalıştırılırken hata oluştu: ${interaction.commandName}`, error);
-                await interaction.reply({ content: 'Bu komutu çalıştırırken bir hata oluştu!', ephemeral: true });
-            }
-        }
+    try {
+      await command.run(client, interaction);
+    } catch (err) {
+      console.error(`[HATA] Komut çalıştırılırken: ${interaction.commandName}`, err);
+      await interaction.reply({ content: "❌ | Komut çalıştırılırken bir hata oluştu.", ephemeral: true });
     }
+  }
+
+  // Eğer destek sistemi gibi özel bir etkileşim varsa, buradan yönlendir.
+  // Ancak destek-ayarla.js dosyasında doğrudan `client.on(...)` varsa o kısmı KALDIRMALISIN.
+  // Bunun yerine destek sistemi sadece bir komut olmalı.
+  // Eğer interaction customId gibi şeyler içeriyorsa, bunlar ayrı bir `event handler` içinde olmalı.
 });
 
-
+// Botu başlat
 client.login(config.token);
-    
