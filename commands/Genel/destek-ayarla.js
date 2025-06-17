@@ -47,7 +47,7 @@ module.exports = {
     {
         name: "yetkilirol",
         description: "Destek taleplerini görebilecek yetkili rolü.",
-        type: ApplicationCommandOptionOptionType.Role,
+        type: ApplicationCommandOptionType.Role,
         required: true,
     }
   ],
