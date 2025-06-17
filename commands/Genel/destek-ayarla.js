@@ -15,7 +15,7 @@ const {
   UserSelectMenuBuilder,
 } = require("discord.js");
 const db = require("croxydb");
-const config = require("../../config.json");
+const config = require("../../config.json"); 
 
 // Ana komut tanımı
 module.exports = {
