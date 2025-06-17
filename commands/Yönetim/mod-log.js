@@ -92,7 +92,8 @@ module.exports = [
 ];
 
 client.on("messageDelete", async (message) => {
-  if (!message.guild || message.author.bot) return;
+  if (!message || !message.author) return; // Hata almamak için kontrol
+if (message.author.bot) return;
 
   const guildId = message.guild.id;
   const kanalId = db.get(`modLogKanal_${guildId}`);
