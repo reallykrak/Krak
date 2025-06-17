@@ -479,8 +479,7 @@ client.on("interactionCreate", async (interaction) => {
       
     await interaction.message.edit({ components: [menuRow, newButtonRow] });
 
-    await interaction.reply({ content: `✅ | <@${interaction.user.id}>, bu destek talebini devretti. Talep artık diğer yetkililer tarafından alınabilir.`});
-  }
+    await interaction.reply({ content: `✅ | <@${interaction.user.id}>, bu destek talebini devretti. Talep artık diğer yetkililer tarafından alınabilir.` });
 
   // Destek yönetim menüsü
   if (interaction.isSelectMenu() && interaction.customId === "destek_yonetim") {
