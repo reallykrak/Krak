@@ -94,7 +94,7 @@ module.exports = {
       // Construct the absolute path to the audio file
       // IMPORTANT: Adjust this path if your 'assets' folder is located differently.
       // Assuming 'pode.js' is in 'your_bot_root/commands/category/pode.js' and 'assets' is in 'Krak/commands/Eğlence'.
-      const audioFilePath = path.join(__dirname, "../../../assets/pode-sentar.mp3");
+      const audioFilePath = path.join(__dirname, "Krak/assets/pode-sentar.mp3");
 
       const resource = createAudioResource(audioFilePath);
       player.play(resource);
