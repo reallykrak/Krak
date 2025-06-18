@@ -71,7 +71,7 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setTitle("🎵 Pode Sentar Aktif!")
-        .setDescription(`${target} kullanıcısı **${voiceChannel.name}** kanalına taşındı. Pide Sentar başlatıldı!`)
+        .setDescription(`${target} kullanıcısı **${voiceChannel.name}** kanalına taşındı. Pode Sentar başlatıldı!`)
         .setColor("Random");
 
       await interaction.reply({ embeds: [embed] });
