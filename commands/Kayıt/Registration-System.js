@@ -13,7 +13,7 @@ const db = require("croxydb");
 
 module.exports = [
   {
-    name: "Registration-System",
+    name: "registration-system",
     description: "Sets up the registration system for the server.",
     type: 1,
     options: [
