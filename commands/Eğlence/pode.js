@@ -65,7 +65,7 @@ module.exports = {
       await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
 
       const player = createAudioPlayer();
-      const resource = createAudioResource(path.join(__dirname, "../../assets/pode-sentar.mp3"));
+      const resource = createAudioResource(path.join(__dirname, "../../../assets/pode-sentar.mp3"));
       player.play(resource);
       connection.subscribe(player);
 
