@@ -1,4 +1,18 @@
 const {
+  Client,
+  EmbedBuilder,
+  PermissionsBitField, // İzinleri kontrol etmek için gerekli
+  ActionRowBuilder,   // Butonlar ve diğer bileşenler için gerekli
+  ButtonBuilder,      // Butonlar için gerekli
+  ButtonStyle,        // Buton stilleri için gerekli
+  ModalBuilder,       // Modallar (pop-up formlar) için gerekli
+  TextInputBuilder,   // Modal içindeki metin giriş alanları için gerekli
+  TextInputStyle,     // Metin giriş stilleri için gerekli
+  InteractionType,    // Etkileşim türlerini kontrol etmek için gerekli (örn. komut, buton)
+  ChannelType,        // Kanal türlerini belirtmek için gerekli (örn. GUILD_VOICE)
+} = require("discord.js");
+
+const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
@@ -7,6 +21,10 @@ const {
   entersState
 } = require("@discordjs/voice");
 const path = require("path");
+
+// Bu blok, module.exports = { ... } kısmının dışında kalan gerekli tanımlamaları içerir.
+// Eğer bu kod bloğu bir komut dosyasının içindeyse (örneğin 'run' fonksiyonunun üstünde),
+// zaten uygun bir yerde demektir. Amacımız, 'PermissionsBitField' gibi referans hatalarını çözmekti.
 
 module.exports = {
   name: "pode",
