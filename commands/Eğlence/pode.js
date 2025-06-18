@@ -1,18 +1,4 @@
 const {
-  Client,
-  EmbedBuilder,
-  PermissionsBitField,
-  ActionRowBuilder, // Not used in this command, but kept as it was in your original code
-  ButtonBuilder,    // Not used
-  ButtonStyle,      // Not used
-  ModalBuilder,     // Not used
-  TextInputBuilder, // Not used
-  TextInputStyle,   // Not used
-  InteractionType,  // Not used
-  ChannelType,      // Not used
-} = require("discord.js");
-
-const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
