@@ -22,7 +22,7 @@ module.exports = {
     const ctx = canvas.getContext("2d");
 
     // Arka plan
-    const bgPath = path.join(__dirname, "../../image/level-up.png");
+    const bgPath = path.join(__dirname, "../../image/level-card.png");
     const background = await loadImage(bgPath);
     ctx.drawImage(background, 0, 0, width, height);
 
@@ -60,7 +60,7 @@ module.exports = {
     ctx.fillText(`${xp}/100`, width - 160, 200);
 
     const buffer = canvas.toBuffer("image/png");
-    const attachment = new AttachmentBuilder(buffer, { name: "level-card.png" });
+    const attachment = new AttachmentBuilder(buffer, { name: "level.png" });
 
     await interaction.reply({ files: [attachment] });
   }
