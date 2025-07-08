@@ -60,7 +60,7 @@ module.exports = {
     ctx.fillText(`${xp}/100`, width - 160, 200);
 
     const buffer = canvas.toBuffer("image/png");
-    const attachment = new AttachmentBuilder(buffer, { name: "level-up.png" });
+    const attachment = new AttachmentBuilder(buffer, { name: "level-card.png" });
 
     await interaction.reply({ files: [attachment] });
   }
