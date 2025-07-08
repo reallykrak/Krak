@@ -5,7 +5,7 @@ const db = require("croxydb");
 
 module.exports = {
   name: "lvl",
-  description: "Seviye kartını şablon üzerine çizerek gönderir.",
+  description: "Seviye kartını şablon üzerine çizer.",
   type: 1,
   run: async (client, interaction) => {
     const user = interaction.user;
@@ -17,7 +17,6 @@ module.exports = {
     const progress = Math.min(xp / xpToNextLevel, 1);
     const percentage = Math.floor(progress * 100);
 
-    // 1. Şablonu yükle
     const background = await loadImage(path.join(__dirname, "../../image/level.png"));
     const width = background.width;
     const height = background.height;
@@ -25,16 +24,16 @@ module.exports = {
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
-    // 2. Arka planı çiz
+    // 1. Arka plan çiz
     ctx.drawImage(background, 0, 0, width, height);
 
-    // 3. Avatarı çiz
-    const avatarURL = user.displayAvatarURL({ extension: 'png', size: 256 });
+    // 2. Avatar
+    const avatarURL = user.displayAvatarURL({ extension: 'png', size: 512 });
     const avatar = await loadImage(avatarURL);
 
-    const avatarX = 60;
-    const avatarY = 60;
-    const avatarSize = 120;
+    const avatarSize = 200;
+    const avatarX = 480;
+    const avatarY = 520;
 
     ctx.save();
     ctx.beginPath();
@@ -44,20 +43,30 @@ module.exports = {
     ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
     ctx.restore();
 
-    // 4. Yeşil ilerleme barı
-    const barX = 150;
-    const barY = 480;
-    const barWidth = 470;
-    const barHeight = 50;
+    // 3. Bar (daha büyük ve aşağıda)
+    const barX = 100;
+    const barY = 660;
+    const barWidth = 570;
+    const barHeight = 60;
     const filledWidth = barWidth * progress;
 
+    // Barın dolu kısmı (yeşil)
     ctx.fillStyle = "#00ff99";
     ctx.fillRect(barX, barY, filledWidth, barHeight);
 
-    // 5. Çıktıyı gönder
+    // 4. Bar üstüne yüzde metni
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 32px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`${percentage}%`, barX + barWidth / 2, barY + barHeight / 2);
+
+    // 5. Sonuç gönder
     const buffer = canvas.toBuffer("image/png");
-    const attachment = new AttachmentBuilder(buffer, { name: "level-card.png" });
+    const attachment = new AttachmentBuilder(buffer, {
+      name: "level-card.png",
+    });
 
     await interaction.reply({ files: [attachment] });
-  }
+  },
 };
