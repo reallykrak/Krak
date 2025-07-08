@@ -8,81 +8,76 @@ module.exports = {
   name: "messageCreate",
   once: false,
   async execute(client, message) {
-    if (message.author.bot) return;
+    if (message.author.bot || !message.guild) return;
 
-    const userXp = db.get(`xp_${message.author.id}_${message.guild.id}`) || 0;
-    const userLevel =
-      db.get(`level_${message.author.id}_${message.guild.id}`) || 1;
+    const userId = message.author.id;
+    const guildId = message.guild.id;
+    const xpKey = `xp_${userId}_${guildId}`;
+    const levelKey = `level_${userId}_${guildId}`;
+
+    const userXp = db.get(xpKey) || 0;
+    const userLevel = db.get(levelKey) || 1;
     const requiredXp = userLevel * client.config.levelXp;
 
-    db.add(
-      `xp_${message.author.id}_${message.guild.id}`,
-      client.config.mesajXp
-    );
+    db.add(xpKey, client.config.mesajXp);
 
     if (userXp + client.config.mesajXp >= requiredXp) {
-      db.set(`level_${message.author.id}_${message.guild.id}`, userLevel + 1);
-      db.set(`xp_${message.author.id}_${message.guild.id}`, 0);
+      db.set(levelKey, userLevel + 1);
+      db.set(xpKey, 0);
 
       const levelUpEmbed = new EmbedBuilder()
-        .setColor(client.config.successColor)
+        .setColor(client.config.successColor || "#00ff99")
         .setDescription(
-          `🎉 | Tebrikler ${message.author}! **${
-            userLevel + 1
-          }** seviyesine ulaştın!`
+          `🎉 | Tebrikler ${message.author}, **${userLevel + 1}** seviyesine ulaştın!`
         )
-        .setFooter({ text: client.config.footer })
+        .setFooter({ text: client.config.footer || "Level Sistemi" })
         .setTimestamp();
 
       message.channel.send({ embeds: [levelUpEmbed] });
     }
 
-    if (db.has(`afk_${message.author.id}`)) {
-      const afkSebep = db.get(`afk_${message.author.id}`);
-      const afkDate = db.get(`afkDate_${message.author.id}`);
-
+    // AFK ÇIKIŞ
+    if (db.has(`afk_${userId}`)) {
+      const afkSebep = db.get(`afk_${userId}`);
+      const afkDate = db.get(`afkDate_${userId}`);
       const timeAgo = moment
         .duration(Date.now() - afkDate.date)
         .format("D [gün], H [saat], m [dakika], s [saniye]");
 
-      db.delete(`afk_${message.author.id}`);
-      db.delete(`afkDate_${message.author.id}`);
+      db.delete(`afk_${userId}`);
+      db.delete(`afkDate_${userId}`);
 
-      const embed = new EmbedBuilder()
+      const afkOut = new EmbedBuilder()
         .setColor("#57F287")
-        .setDescription(
-          `✅ | AFK modundan çıktınız. ${timeAgo} boyunca AFK'daydınız.`
-        )
+        .setDescription(`✅ | AFK modundan çıktınız. ${timeAgo} boyunca AFK'daydınız.`)
         .setFooter({ text: client.config.footer })
         .setTimestamp();
 
-      message.reply({ embeds: [embed] }).then((msg) => {
-        setTimeout(() => {
-          msg.delete().catch((e) => {});
-        }, 5000);
+      message.reply({ embeds: [afkOut] }).then((msg) => {
+        setTimeout(() => msg.delete().catch(() => {}), 5000);
       });
     }
 
+    // MENTION AFK KONTROL
     if (message.mentions.users.size > 0) {
       const mentionedUser = message.mentions.users.first();
 
       if (db.has(`afk_${mentionedUser.id}`)) {
         const afkSebep = db.get(`afk_${mentionedUser.id}`);
         const afkDate = db.get(`afkDate_${mentionedUser.id}`);
-
         const timeAgo = moment
           .duration(Date.now() - afkDate.date)
           .format("D [gün], H [saat], m [dakika], s [saniye]");
 
-        const embed = new EmbedBuilder()
+        const afkInfo = new EmbedBuilder()
           .setColor("#5865F2")
           .setDescription(
-            `ℹ️ | ${mentionedUser.tag} kullanıcısı **${timeAgo}** önce AFK oldu.\n\n📝 **Sebep:** ${afkSebep}`
+            `ℹ️ | ${mentionedUser.tag} kullanıcısı **${timeAgo}** önce AFK oldu.\n📝 **Sebep:** ${afkSebep}`
           )
           .setFooter({ text: client.config.footer })
           .setTimestamp();
 
-        message.reply({ embeds: [embed] });
+        message.reply({ embeds: [afkInfo] });
       }
     }
   },
