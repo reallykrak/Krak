@@ -1,43 +1,42 @@
-const { SlashCommandBuilder, AttachmentBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  AttachmentBuilder
+} = require("discord.js");
 const { createCanvas, loadImage } = require("@napi-rs/canvas");
-const db = require("croxydb");
 const path = require("path");
+const db = require("croxydb");
 
 module.exports = {
-  data: new SlashCommandBuilder()
-    .setName("lvl")
-    .setDescription("Seviye kartını göster."),
-
-  async execute(interaction) {
+  name: "lvl",
+  description: "Seviye kartını görsel olarak gösterir.",
+  type: 1,
+  run: async (client, interaction) => {
     const user = interaction.user;
-    const userId = user.id;
     const guildId = interaction.guild.id;
-    const key = `${guildId}_${userId}`;
-    const userData = db.get(key) || { xp: 0, level: 1 };
+    const xp = db.get(`xp_${user.id}_${guildId}`) || 0;
+    const level = db.get(`level_${user.id}_${guildId}`) || 1;
 
-    // Kart boyutu
     const width = 1000;
     const height = 300;
-
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
-    // Arka plan görseli
-    const bg = await loadImage(path.join(__dirname, "../../image/card-bg.png"));
-    ctx.drawImage(bg, 0, 0, width, height);
+    // Arka plan
+    const bgPath = path.join(__dirname, "../../image/level-up.png");
+    const background = await loadImage(bgPath);
+    ctx.drawImage(background, 0, 0, width, height);
 
-    // XP bar (konum ve ölçü)
+    // Bar konumu ve stil
     const barX = 85;
     const barY = 230;
     const barWidth = 830;
     const barHeight = 15;
     const radius = 7.5;
 
-    // XP doluluk
-    const progress = Math.min(userData.xp / 100, 1);
+    const progress = Math.min(xp / 100, 1); // 0 ile 1 arası
     const filledWidth = barWidth * progress;
 
-    // Dolan bar (yeşil)
+    // XP bar
     ctx.fillStyle = "#00ff99";
     ctx.beginPath();
     ctx.moveTo(barX + radius, barY);
@@ -52,14 +51,17 @@ module.exports = {
     ctx.closePath();
     ctx.fill();
 
-    // Yazılar
+    // Metinler
     ctx.font = "28px sans-serif";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(`SEVİYE: ${userData.level}`, 80, 70);
-    ctx.fillText(`XP: ${userData.xp}/100`, 80, 120);
+    ctx.fillText(`SEVİYE`, width - 140, 50);
+    ctx.fillText(`${level}`, width - 100, 90);
+    ctx.fillText(`XP`, width - 140, 160);
+    ctx.fillText(`${xp}/100`, width - 160, 200);
 
     const buffer = canvas.toBuffer("image/png");
-    const attachment = new AttachmentBuilder(buffer, { name: "level-card.png" });
+    const attachment = new AttachmentBuilder(buffer, { name: "level.png" });
+
     await interaction.reply({ files: [attachment] });
   }
 };
