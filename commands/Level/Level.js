@@ -17,24 +17,20 @@ module.exports = {
     const progress = Math.min(xp / xpToNextLevel, 1);
     const percentage = Math.floor(progress * 100);
 
-    // Yeni görseli yükle (senin attığın image/level-card.png)
     const background = await loadImage(path.join(__dirname, "../../image/level-card.png"));
-    const width = background.width;
-    const height = background.height;
-
-    const canvas = createCanvas(width, height);
+    const canvas = createCanvas(background.width, background.height);
     const ctx = canvas.getContext("2d");
 
     // Arka plan çiz
-    ctx.drawImage(background, 0, 0, width, height);
+    ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-    // Avatar yükle
-    const avatarURL = user.displayAvatarURL({ extension: 'png', size: 512 });
+    // Avatar
+    const avatarURL = user.displayAvatarURL({ extension: "png", size: 512 });
     const avatar = await loadImage(avatarURL);
 
+    const avatarSize = 128;
     const avatarX = 40;
     const avatarY = 40;
-    const avatarSize = 150;
 
     ctx.save();
     ctx.beginPath();
@@ -44,46 +40,48 @@ module.exports = {
     ctx.drawImage(avatar, avatarX, avatarY, avatarSize, avatarSize);
     ctx.restore();
 
-    // Kullanıcı ismi
+    // Kullanıcı adı
     ctx.fillStyle = "#ffffff";
     ctx.font = "bold 36px sans-serif";
     ctx.textAlign = "left";
-    ctx.fillText(user.username, avatarX + avatarSize + 20, avatarY + avatarSize / 1.5);
+    ctx.fillText(user.username, avatarX + avatarSize + 20, avatarY + 60);
 
-    // Bar (XP ilerlemesi)
-    const barX = 100;
-    const barY = 580;
-    const barWidth = 570;
-    const barHeight = 50;
+    // XP bar
+    const barX = 60;
+    const barY = 200;
+    const barWidth = 600;
+    const barHeight = 40;
     const filledWidth = barWidth * progress;
 
-    // Yeşil doluluk
+    // Arka çerçeve
+    ctx.fillStyle = "#333333";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // Dolu yeşil kısım
     ctx.fillStyle = "#00ff66";
     ctx.fillRect(barX, barY, filledWidth, barHeight);
 
-    // Yüzde yazısı
+    // Yüzde
     ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 28px sans-serif";
+    ctx.font = "bold 24px sans-serif";
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`${percentage}%`, barX + barWidth / 2, barY + barHeight / 2);
+    ctx.fillText(`${percentage}%`, barX + barWidth / 2, barY + barHeight / 2 + 8);
 
-    // Sağda Seviye ve XP yazıları
-    ctx.fillStyle = "#ff66cc";
-    ctx.font = "bold 36px sans-serif";
+    // Sağ alt: Seviye
+    ctx.fillStyle = "#ffcc00";
+    ctx.font = "bold 32px sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(`Seviye: ${level}`, width - 80, 450);
+    ctx.fillText(`Seviye: ${level}`, canvas.width - 60, barY - 10);
 
-    ctx.fillStyle = "#99ccff";
-    ctx.font = "28px sans-serif";
-    ctx.fillText(`XP: ${xp}/${xpToNextLevel}`, width - 80, 490);
+    // Sağ alt: XP
+    ctx.fillStyle = "#66ccff";
+    ctx.font = "24px sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(`XP: ${xp}/${xpToNextLevel}`, canvas.width - 60, barY + barHeight + 30);
 
-    // PNG olarak gönder
     const buffer = canvas.toBuffer("image/png");
-    const attachment = new AttachmentBuilder(buffer, {
-      name: "level-card.png",
-    });
+    const attachment = new AttachmentBuilder(buffer, { name: "level-card.png" });
 
     await interaction.reply({ files: [attachment] });
-  },
+  }
 };
