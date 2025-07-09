@@ -5,7 +5,7 @@ const {
   AttachmentBuilder,
 } = require("discord.js");
 const db = require("croxydb");
-const { createCanvas, loadImage, registerFont } = require("canvas");
+const { createCanvas, loadImage, registerFont } = require("npm@canvas");
 const path = require("path");
 const fs = require("fs");
 const config = require("../../config.json");
