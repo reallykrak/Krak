@@ -13,17 +13,18 @@ module.exports = {
     const userId = message.author.id;
     const guildId = message.guild.id;
 
+    // === XP & LEVEL SİSTEMİ === //
     const xpKey = `xp_${userId}_${guildId}`;
     const levelKey = `level_${userId}_${guildId}`;
     let userXp = db.get(xpKey) || 0;
-    let userLevel = db.get(levelKey) || 1;
-    const xpToNextLevel = 100; // Her seviye için gereken XP sabit: 100
+    let userLevel = db.get(levelKey) || 0;
+    const xpToNextLevel = 100;
 
     // XP ekle
     userXp += 1;
     db.set(xpKey, userXp);
 
-    // Seviye atlama kontrolü
+    // Seviye kontrolü
     if (userXp >= xpToNextLevel) {
       userLevel += 1;
       db.set(levelKey, userLevel);
@@ -31,14 +32,14 @@ module.exports = {
 
       const levelEmbed = new EmbedBuilder()
         .setColor(client.config?.successColor || "#00ff99")
-        .setDescription(`🎉 | Tebrikler ${message.author}, **${userLevel}** seviyesine ulaştın!`)
+        .setDescription(`🎉 | Tebrikler ${message.author}, **${userLevel}. seviye** oldun!`)
         .setFooter({ text: client.config?.footer || "Seviye Sistemi" })
         .setTimestamp();
 
       message.channel.send({ embeds: [levelEmbed] });
     }
 
-    // AFK çıkışı
+    // === AFK ÇIKIŞI === //
     if (db.has(`afk_${userId}`)) {
       const afkSebep = db.get(`afk_${userId}`);
       const afkDate = db.get(`afkDate_${userId}`);
@@ -60,7 +61,7 @@ module.exports = {
       });
     }
 
-    // AFK kullanıcıya mention varsa göster
+    // === AFK MENTION KONTROLÜ === //
     if (message.mentions.users.size > 0) {
       const mentionedUser = message.mentions.users.first();
 
@@ -82,5 +83,5 @@ module.exports = {
         message.reply({ embeds: [mentionEmbed] });
       }
     }
-  },
+  }
 };
