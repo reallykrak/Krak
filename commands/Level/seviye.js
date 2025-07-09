@@ -6,7 +6,7 @@ const {
   EmbedBuilder,
 } = require("discord.js");
 const db = require("croxydb");
-const { createCanvas, loadImage } = require("canvas");
+const { createCanvas, loadImage } = require("@napi-rs/canvas");
 const path = require("path");
 const config = require("../../config.json");
 const voiceXpIntervals = new Map();
