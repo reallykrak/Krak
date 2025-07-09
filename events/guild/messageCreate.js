@@ -15,20 +15,24 @@ module.exports = {
 
     const xpKey = `xp_${userId}_${guildId}`;
     const levelKey = `level_${userId}_${guildId}`;
-    const userXp = db.get(xpKey) || 0;
-    const userLevel = db.get(levelKey) || 1;
-    const requiredXp = userLevel * client.config.levelXp;
+    let userXp = db.get(xpKey) || 0;
+    let userLevel = db.get(levelKey) || 1;
+    const xpToNextLevel = 100; // Her seviye için gereken XP sabit: 100
 
-    db.add(xpKey, client.config.mesajXp);
+    // XP ekle
+    userXp += 1;
+    db.set(xpKey, userXp);
 
-    if (userXp + client.config.mesajXp >= requiredXp) {
-      db.set(levelKey, userLevel + 1);
+    // Seviye atlama kontrolü
+    if (userXp >= xpToNextLevel) {
+      userLevel += 1;
+      db.set(levelKey, userLevel);
       db.set(xpKey, 0);
 
       const levelEmbed = new EmbedBuilder()
-        .setColor(client.config.successColor)
-        .setDescription(`🎉 | Tebrikler ${message.author}, **${userLevel + 1}** seviyesine ulaştın!`)
-        .setFooter({ text: client.config.footer })
+        .setColor(client.config?.successColor || "#00ff99")
+        .setDescription(`🎉 | Tebrikler ${message.author}, **${userLevel}** seviyesine ulaştın!`)
+        .setFooter({ text: client.config?.footer || "Seviye Sistemi" })
         .setTimestamp();
 
       message.channel.send({ embeds: [levelEmbed] });
@@ -46,9 +50,9 @@ module.exports = {
       db.delete(`afkDate_${userId}`);
 
       const afkOut = new EmbedBuilder()
-        .setColor(client.config.successColor)
+        .setColor(client.config?.successColor || "#00ff99")
         .setDescription(`✅ | AFK modundan çıktınız. ${timeAgo} boyunca AFK'daydınız.`)
-        .setFooter({ text: client.config.footer })
+        .setFooter({ text: client.config?.footer || "AFK Sistemi" })
         .setTimestamp();
 
       message.reply({ embeds: [afkOut] }).then((msg) => {
@@ -68,11 +72,11 @@ module.exports = {
           .format("D [gün], H [saat], m [dakika], s [saniye]");
 
         const mentionEmbed = new EmbedBuilder()
-          .setColor(client.config.embedColor)
+          .setColor(client.config?.embedColor || "#ffaa00")
           .setDescription(
             `ℹ️ | ${mentionedUser.tag} kullanıcısı **${timeAgo}** önce AFK oldu.\n\n📝 **Sebep:** ${afkSebep}`
           )
-          .setFooter({ text: client.config.footer })
+          .setFooter({ text: client.config?.footer || "AFK Sistemi" })
           .setTimestamp();
 
         message.reply({ embeds: [mentionEmbed] });
