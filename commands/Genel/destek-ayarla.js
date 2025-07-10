@@ -15,11 +15,11 @@ const {
 } = require("discord.js");
 const db = require("croxydb");
 const config = require("../../config.json");
-const fs = require("node:fs"); 
+const fs = require("node:fs");
 
 // Ana komut tanımı
 module.exports = {
-  name: "destek-ayarla",
+  name: "destek-sistemi",
   description: "Destek sistemi kurar ve yönetir.",
   type: ApplicationCommandType.ChatInput,
   cooldown: 10,
@@ -141,22 +141,39 @@ module.exports = {
 // ÖNEMLİ: Bu kod client objesine erişim gerektirir.
 client.on("interactionCreate", async (interaction) => {
   const { guild, member, customId, channel, user } = interaction;
-  if (!guild) return;
+  
+  // Custom ID'ye göre guild'i bulmaya çalış
+  let tempGuild = guild;
+  if (!tempGuild && (customId.startsWith("rate_") || customId.startsWith("mesajlari_goster_"))) {
+      try {
+        let guildId;
+        if(customId.startsWith("rate_")){
+            guildId = customId.split("_")[1];
+        }
+        if(guildId){
+           tempGuild = await client.guilds.fetch(guildId);
+        }
+      } catch (e) {
+        console.error("Buton ID'sinden sunucu bulunamadı:", e);
+        return;
+      }
+  }
+  if (!tempGuild) return; // Eğer hala sunucu yoksa devam etme
 
-  const sistemVeri = db.get(`destek_sistemi_${guild.id}`);
+  const sistemVeri = db.get(`destek_sistemi_${tempGuild.id}`);
 
   // Destek talebi açma butonu
   if (interaction.isButton() && customId === "destek_ac") {
-    const mevcutKanalId = db.get(`destek_user_open_${guild.id}_${user.id}`);
+    const mevcutKanalId = db.get(`destek_user_open_${tempGuild.id}_${user.id}`);
     if (mevcutKanalId) {
-        const mevcutKanal = guild.channels.cache.get(mevcutKanalId);
+        const mevcutKanal = tempGuild.channels.cache.get(mevcutKanalId);
         if (mevcutKanal) {
             return interaction.reply({
                 content: `❌ | Zaten açık bir destek talebiniz var: ${mevcutKanal}!`,
                 ephemeral: true,
             });
         } else {
-            db.delete(`destek_user_open_${guild.id}_${user.id}`);
+            db.delete(`destek_user_open_${tempGuild.id}_${user.id}`);
         }
     }
 
@@ -192,8 +209,8 @@ client.on("interactionCreate", async (interaction) => {
       });
     }
 
-    const logKanal = guild.channels.cache.get(sistemVeri.logKanal);
-    const yetkiliRol = guild.roles.cache.get(sistemVeri.yetkiliRol);
+    const logKanal = tempGuild.channels.cache.get(sistemVeri.logKanal);
+    const yetkiliRol = tempGuild.roles.cache.get(sistemVeri.yetkiliRol);
 
     if (!logKanal || !yetkiliRol) {
       return interaction.reply({
@@ -206,13 +223,13 @@ client.on("interactionCreate", async (interaction) => {
     const aciklama = interaction.fields.getTextInputValue("destek_aciklama");
 
     try {
-      const destekKanal = await guild.channels.create({
+      const destekKanal = await tempGuild.channels.create({
         name: `ticket-${user.username}`,
         type: ChannelType.GuildText,
-        parent: channel.parentId,
+        parent: interaction.channel.parentId, // Modal'ın açıldığı kanalın kategorisini al
         permissionOverwrites: [
           {
-            id: guild.id,
+            id: tempGuild.id,
             deny: [PermissionsBitField.Flags.ViewChannel],
           },
           {
@@ -230,7 +247,7 @@ client.on("interactionCreate", async (interaction) => {
         ],
       });
 
-      const ticketId = `ticket-${Date.now()}`;
+      const ticketId = destekKanal.id;
       db.set(`destek_kanal_by_channel_${destekKanal.id}`, {
         ticketId: ticketId,
         talepSahibiId: user.id,
@@ -240,8 +257,8 @@ client.on("interactionCreate", async (interaction) => {
         handlerId: null,
         voiceChannelId: null,
       });
-      db.set(`destek_user_open_${guild.id}_${user.id}`, destekKanal.id);
-      db.add(`destek_stats_${guild.id}.totalTickets`, 1);
+      db.set(`destek_user_open_${tempGuild.id}_${user.id}`, destekKanal.id);
+      db.add(`destek_stats_${tempGuild.id}.totalTickets`, 1);
 
       const kanalEmbed = new EmbedBuilder()
         .setTitle("📬 | Yeni Destek Talebi")
@@ -304,15 +321,15 @@ client.on("interactionCreate", async (interaction) => {
   // YETKİLİ İŞLEMLERİ
   // =======================================================================================================
   const yetkiKontrol = () => {
-    if (!sistemVeri) return false;
+    if (!sistemVeri || !member) return false;
     const yetkiliRolId = sistemVeri.yetkiliRol;
     if (!yetkiliRolId) return false;
     return member.roles.cache.has(yetkiliRolId) || member.permissions.has(PermissionsBitField.Flags.ManageChannels);
   };
   
-  const yetkiliCustomIds = ["sesli_destek_toggle", "yavas_mod_ayarla", "devral", "devret", "cikar_uye_", "ekle_uye_", "kaydet_mesajlar", "mesajlari_goster"]; 
+  const yetkiliCustomIds = ["sesli_destek_toggle", "yavas_mod_ayarla", "devral", "devret", "cikar_uye_", "ekle_uye_"]; 
   if (interaction.isButton() && (yetkiliCustomIds.some(id => customId.startsWith(id)) || customId === "devret_menu")) {
-    if (!yetkiKontrol() && !customId.startsWith("mesajlari_goster")) {
+    if (!yetkiKontrol()) {
         return interaction.reply({ content: "❌ | Bu işlemi sadece yetkililer yapabilir.", ephemeral: true });
     }
   }
@@ -322,13 +339,13 @@ client.on("interactionCreate", async (interaction) => {
     }
   }
 
-  const ticketData = db.get(`destek_kanal_by_channel_${channel.id}`);
+  const ticketData = channel ? db.get(`destek_kanal_by_channel_${channel.id}`) : null;
 
   // ANA YÖNETİM MENÜSÜ
   if (interaction.isStringSelectMenu() && customId === "destek_yonetim_menu") {
     const selectedValue = interaction.values[0];
     const { talepSahibiId, konu, aciklama, acilisZamani, ticketId } = ticketData;
-    const logKanal = sistemVeri?.logKanal ? guild.channels.cache.get(sistemVeri.logKanal) : null;
+    const logKanal = sistemVeri?.logKanal ? tempGuild.channels.cache.get(sistemVeri.logKanal) : null;
 
     switch (selectedValue) {
         case "kapat":
@@ -380,7 +397,7 @@ client.on("interactionCreate", async (interaction) => {
                     const dmEmbed = new EmbedBuilder()
                         .setColor("#FF0000")
                         .setTitle(`Destek Talebiniz Kapatıldı`)
-                        .setDescription(`**${guild.name}** sunucusundaki **${channel.name}** isimli destek talebiniz kapatıldı. Konuşma geçmişiniz ektedir.`)
+                        .setDescription(`**${tempGuild.name}** sunucusundaki **${channel.name}** isimli destek talebiniz kapatıldı. Konuşma geçmişiniz ektedir.`)
                         .addFields([
                             { name: "Kapatan Yetkili", value: `<@${kapatanYetkili.id}>`, inline: true },
                             { name: "Tarih", value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: true },
@@ -388,25 +405,19 @@ client.on("interactionCreate", async (interaction) => {
                         .setFooter({ text: "Hizmetimizi değerlendirmek için aşağıdaki butonları kullanabilirsiniz." })
                         .setTimestamp();
                         
+                    // Düzeltilmiş Kısım: Buton ID'sine sunucu ve yetkili bilgisi ekleniyor
+                    const ratingCustomIdPrefix = `rate_${tempGuild.id}_${kapatanYetkili.id}`;
+                    
                     const ratingRow = new ActionRowBuilder().addComponents(
-                        new ButtonBuilder().setCustomId(`rate_ticket_${ticketId}_1`).setLabel("⭐").setStyle(ButtonStyle.Danger),
-                        new ButtonBuilder().setCustomId(`rate_ticket_${ticketId}_2`).setLabel("⭐⭐").setStyle(ButtonStyle.Secondary),
-                        new ButtonBuilder().setCustomId(`rate_ticket_${ticketId}_3`).setLabel("⭐⭐⭐").setStyle(ButtonStyle.Secondary),
-                        new ButtonBuilder().setCustomId(`rate_ticket_${ticketId}_4`).setLabel("⭐⭐⭐⭐").setStyle(ButtonStyle.Success),
-                        new ButtonBuilder().setCustomId(`rate_ticket_${ticketId}_5`).setLabel("⭐⭐⭐⭐⭐").setStyle(ButtonStyle.Success)
+                        new ButtonBuilder().setCustomId(`${ratingCustomIdPrefix}_1`).setLabel("⭐").setStyle(ButtonStyle.Danger),
+                        new ButtonBuilder().setCustomId(`${ratingCustomIdPrefix}_2`).setLabel("⭐⭐").setStyle(ButtonStyle.Secondary),
+                        new ButtonBuilder().setCustomId(`${ratingCustomIdPrefix}_3`).setLabel("⭐⭐⭐").setStyle(ButtonStyle.Secondary),
+                        new ButtonBuilder().setCustomId(`${ratingCustomIdPrefix}_4`).setLabel("⭐⭐⭐⭐").setStyle(ButtonStyle.Success),
+                        new ButtonBuilder().setCustomId(`${ratingCustomIdPrefix}_5`).setLabel("⭐⭐⭐⭐⭐").setStyle(ButtonStyle.Success)
                     );
                     
-                    // Önce embed ve transkripti gönder
                     await talepSahibi.send({ embeds: [dmEmbed], files: [{ attachment: logFileName, name: logFileName }] });
-                    // Sonra puanlama mesajını gönder
                     await talepSahibi.send({ content: "Aldığınız hizmeti değerlendirir misiniz?", components: [ratingRow] });
-                    
-                    db.set(`ticket_rating_info_${ticketId}`, {
-                        guildId: guild.id,
-                        closerId: kapatanYetkili.id,
-                        ownerId: talepSahibiId
-                    });
-
 
                 } catch (dmError) {
                     console.error("Kullanıcıya DM gönderilemedi:", dmError);
@@ -414,125 +425,125 @@ client.on("interactionCreate", async (interaction) => {
                 }
             }
             
-            db.add(`destek_stats_${guild.id}.closedTickets`, 1);
+            db.add(`destek_stats_${tempGuild.id}.closedTickets`, 1);
 
             setTimeout(async () => {
                 try {
                     await channel.delete();
-                    db.delete(`destek_user_open_${guild.id}_${talepSahibiId}`);
+                    db.delete(`destek_user_open_${tempGuild.id}_${talepSahibiId}`);
                     db.delete(`destek_kanal_by_channel_${channel.id}`);
                     if (ticketData.voiceChannelId) {
-                        const voiceChannel = guild.channels.cache.get(ticketData.voiceChannelId);
+                        const voiceChannel = tempGuild.channels.cache.get(ticketData.voiceChannelId);
                         if (voiceChannel) await voiceChannel.delete().catch(e => console.error("Ses kanalı silinemedi:", e));
                     }
                 } catch(e) { console.error("Kanal silinemedi:", e)}
             }, 5000);
             break;
-            // Diğer case'ler (uye_cikar, uye_ekle, vb.) buraya gelecek...
-            case "uye_cikar":
-                const membersInChannel = channel.members.filter(m => !m.user.bot && m.id !== talepSahibiId && m.id !== user.id && m.id !== client.user.id && !m.roles.cache.has(sistemVeri.yetkiliRol)); // Exclude ticket owner, bot and staff members
-                if (membersInChannel.size === 0) {
-                    return interaction.reply({ content: "❌ | Bu tickettan çıkarılabilecek (talep sahibi, bot ve yetkililer dışında) başka üye bulunmuyor.", ephemeral: true });
-                }
-                const components = [];
-                const memberArray = Array.from(membersInChannel.values());
-                for (let i = 0; i < memberArray.length; i += 5) {
-                    const row = new ActionRowBuilder();
-                    const chunk = memberArray.slice(i, i + 5);
-                    chunk.forEach(mem => {
-                        row.addComponents(
-                            new ButtonBuilder()
-                                .setCustomId(`cikar_uye_${mem.id}`)
-                                .setLabel(mem.user.username)
-                                .setStyle(ButtonStyle.Secondary)
-                        );
-                    });
-                    components.push(row);
-                }
-                await interaction.reply({ content: "Tickettan çıkarmak istediğiniz üyeyi seçin:", components, ephemeral: true });
-                break;
-            case "uye_ekle":
-                const allGuildMembers = await guild.members.fetch();
-                const membersNotInChannel = allGuildMembers.filter(m => 
-                    !m.user.bot && 
-                    !channel.members.has(m.id)
-                );
-
-                if (membersNotInChannel.size === 0) {
-                    return interaction.reply({ content: "❌ | Kanala eklenebilecek başka üye bulunmuyor.", ephemeral: true });
-                }
-
-                const memberOptions = membersNotInChannel.map(m => ({
-                    label: m.user.tag,
-                    value: m.id,
-                })).slice(0, 25);
-
-                if (memberOptions.length === 0) {
-                    return interaction.reply({ content: "❌ | Kanala eklenebilecek başka üye bulunmuyor.", ephemeral: true });
-                }
-
-                const selectMenuRow = new ActionRowBuilder().addComponents(
-                    new StringSelectMenuBuilder()
-                        .setCustomId("uye_ekle_menu")
-                        .setPlaceholder("Eklenecek üyeyi seçin")
-                        .addOptions(memberOptions)
-                );
-                await interaction.reply({ content: "Kanala eklemek istediğiniz üyeyi seçin:", components: [selectMenuRow], ephemeral: true });
-                break;
-            case "kilitle":
-                await channel.permissionOverwrites.edit(talepSahibiId, { SendMessages: false });
-                await interaction.reply({ content: `✅ | Ticket kilitlendi.`, ephemeral: true });
-                await channel.send({ embeds: [new EmbedBuilder().setColor("Orange").setDescription(`🔐 | Bu talep <@${user.id}> tarafından kilitlendi.`)] });
-                break;
-            case "kilit_ac":
-                await channel.permissionOverwrites.edit(talepSahibiId, { SendMessages: true });
-                await interaction.reply({ content: `✅ | Ticket kilidi açıldı.`, ephemeral: true });
-                await channel.send({ embeds: [new EmbedBuilder().setColor("Green").setDescription(`🔓 | Bu talebin kilidi <@${user.id}> tarafından açıldı.`)] });
-                break;
-            case "bilgi":
-                const infoEmbed = new EmbedBuilder()
-                    .setTitle("ℹ️ | Talep Bilgisi")
-                    .addFields([
-                        { name: "📝 Konu", value: `\`${konu}\``, inline: true },
-                        { name: "👤 Talep Sahibi", value: `<@${talepSahibiId}>`, inline: true },
-                        { name: "📄 Açıklama", value: aciklama, inline: false },
-                        { name: "🗓️ Açılış Zamanı", value: `<t:${Math.floor(acilisZamani / 1000)}:F>`, inline: false }
-                    ])
-                    .setColor("Blue")
-                    .setFooter({ text: config.footer || "Destek Sistemi" })
-                    .setTimestamp();
-                if (ticketData.voiceChannelId) {
-                    infoEmbed.addFields({ name: "📞 Sesli Destek Kanalı", value: `<#${ticketData.voiceChannelId}>`, inline: false });
-                }
-                await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
-                break;
-            case "dm_gonder":
-                const dmModal = new ModalBuilder()
-                    .setCustomId("dm_gonder_modal")
-                    .setTitle("Talep Sahibine DM Gönder")
-                    .addComponents(
-                        new ActionRowBuilder().addComponents(
-                            new TextInputBuilder()
-                                .setCustomId("dm_icerik")
-                                .setLabel("Gönderilecek Mesaj")
-                                .setStyle(TextInputStyle.Paragraph)
-                                .setRequired(true)
-                        )
+            
+        case "uye_cikar":
+            const membersInChannel = channel.members.filter(m => !m.user.bot && m.id !== talepSahibiId && m.id !== user.id && m.id !== client.user.id && !m.roles.cache.has(sistemVeri.yetkiliRol)); // Exclude ticket owner, bot and staff members
+            if (membersInChannel.size === 0) {
+                return interaction.reply({ content: "❌ | Bu tickettan çıkarılabilecek (talep sahibi, bot ve yetkililer dışında) başka üye bulunmuyor.", ephemeral: true });
+            }
+            const components = [];
+            const memberArray = Array.from(membersInChannel.values());
+            for (let i = 0; i < memberArray.length; i += 5) {
+                const row = new ActionRowBuilder();
+                const chunk = memberArray.slice(i, i + 5);
+                chunk.forEach(mem => {
+                    row.addComponents(
+                        new ButtonBuilder()
+                            .setCustomId(`cikar_uye_${mem.id}`)
+                            .setLabel(mem.user.username)
+                            .setStyle(ButtonStyle.Secondary)
                     );
-                await interaction.showModal(dmModal);
-                break;
+                });
+                components.push(row);
+            }
+            await interaction.reply({ content: "Tickettan çıkarmak istediğiniz üyeyi seçin:", components, ephemeral: true });
+            break;
+        case "uye_ekle":
+            const allGuildMembers = await tempGuild.members.fetch();
+            const membersNotInChannel = allGuildMembers.filter(m => 
+                !m.user.bot && 
+                !channel.members.has(m.id)
+            );
+
+            if (membersNotInChannel.size === 0) {
+                return interaction.reply({ content: "❌ | Kanala eklenebilecek başka üye bulunmuyor.", ephemeral: true });
+            }
+
+            const memberOptions = membersNotInChannel.map(m => ({
+                label: m.user.tag,
+                value: m.id,
+            })).slice(0, 25);
+
+            if (memberOptions.length === 0) {
+                return interaction.reply({ content: "❌ | Kanala eklenebilecek başka üye bulunmuyor.", ephemeral: true });
+            }
+
+            const selectMenuRow = new ActionRowBuilder().addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId("uye_ekle_menu")
+                    .setPlaceholder("Eklenecek üyeyi seçin")
+                    .addOptions(memberOptions)
+            );
+            await interaction.reply({ content: "Kanala eklemek istediğiniz üyeyi seçin:", components: [selectMenuRow], ephemeral: true });
+            break;
+        case "kilitle":
+            await channel.permissionOverwrites.edit(talepSahibiId, { SendMessages: false });
+            await interaction.reply({ content: `✅ | Ticket kilitlendi.`, ephemeral: true });
+            await channel.send({ embeds: [new EmbedBuilder().setColor("Orange").setDescription(`🔐 | Bu talep <@${user.id}> tarafından kilitlendi.`)] });
+            break;
+        case "kilit_ac":
+            await channel.permissionOverwrites.edit(talepSahibiId, { SendMessages: true });
+            await interaction.reply({ content: `✅ | Ticket kilidi açıldı.`, ephemeral: true });
+            await channel.send({ embeds: [new EmbedBuilder().setColor("Green").setDescription(`🔓 | Bu talebin kilidi <@${user.id}> tarafından açıldı.`)] });
+            break;
+        case "bilgi":
+            const infoEmbed = new EmbedBuilder()
+                .setTitle("ℹ️ | Talep Bilgisi")
+                .addFields([
+                    { name: "📝 Konu", value: `\`${konu}\``, inline: true },
+                    { name: "👤 Talep Sahibi", value: `<@${talepSahibiId}>`, inline: true },
+                    { name: "📄 Açıklama", value: aciklama, inline: false },
+                    { name: "🗓️ Açılış Zamanı", value: `<t:${Math.floor(acilisZamani / 1000)}:F>`, inline: false }
+                ])
+                .setColor("Blue")
+                .setFooter({ text: config.footer || "Destek Sistemi" })
+                .setTimestamp();
+            if (ticketData.voiceChannelId) {
+                infoEmbed.addFields({ name: "📞 Sesli Destek Kanalı", value: `<#${ticketData.voiceChannelId}>`, inline: false });
+            }
+            await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+            break;
+        case "dm_gonder":
+            const dmModal = new ModalBuilder()
+                .setCustomId("dm_gonder_modal")
+                .setTitle("Talep Sahibine DM Gönder")
+                .addComponents(
+                    new ActionRowBuilder().addComponents(
+                        new TextInputBuilder()
+                            .setCustomId("dm_icerik")
+                            .setLabel("Gönderilecek Mesaj")
+                            .setStyle(TextInputStyle.Paragraph)
+                            .setRequired(true)
+                    )
+                );
+            await interaction.showModal(dmModal);
+            break;
     }
   }
 
-  // TICKET PUANLAMA BUTONU
-  if (interaction.isButton() && customId.startsWith("rate_ticket_")) {
+  // TICKET PUANLAMA BUTONU - DÜZELTİLMİŞ KISIM
+  if (interaction.isButton() && customId.startsWith("rate_")) {
     const parts = customId.split("_");
-    const ticketId = parts[2];
+    const guildId = parts[1];
+    const closerId = parts[2];
     const rating = parseInt(parts[3]);
 
-    const ratingInfo = db.get(`ticket_rating_info_${ticketId}`);
-    if (!ratingInfo) {
-        return interaction.update({ content: "Bu oylama artık geçerli değil.", components: [] });
+    if (!guildId || !closerId || !rating) {
+        return interaction.update({ content: "❌ Bu oylama işlemi geçersiz veya bozuk.", components: [] }).catch(console.error);
     }
     
     // Butonları devre dışı bırak
@@ -550,35 +561,31 @@ client.on("interactionCreate", async (interaction) => {
         components: [disabledRow]
     });
     
-    const stats = db.get(`destek_stats_${ratingInfo.guildId}`);
-    stats.ratings.push(rating);
-    db.set(`destek_stats_${ratingInfo.guildId}`, stats);
+    db.push(`destek_stats_${guildId}.ratings`, rating);
     
     // Log kanalına bilgi gönder
-    const systemData = db.get(`destek_sistemi_${ratingInfo.guildId}`);
-    if (systemData && systemData.logKanal) {
-        const logChannel = await client.channels.fetch(systemData.logKanal).catch(() => null);
+    const systemDataForRating = db.get(`destek_sistemi_${guildId}`);
+    if (systemDataForRating && systemDataForRating.logKanal) {
+        const logChannel = await client.channels.fetch(systemDataForRating.logKanal).catch(() => null);
         if (logChannel) {
             const ratingEmbed = new EmbedBuilder()
                 .setColor("Gold")
                 .setTitle("⭐ Yeni Ticket Değerlendirmesi")
                 .addFields(
-                    { name: "Puan", value: "⭐".repeat(rating), inline: true },
-                    { name: "Kullanıcı", value: `<@${ratingInfo.ownerId}>`, inline: true },
-                    { name: "Kapatan Yetkili", value: `<@${ratingInfo.closerId}>`, inline: true },
+                    { name: "Puan", value: `${"⭐".repeat(rating)}${"☆".repeat(5-rating)} (${rating}/5)`, inline: true },
+                    { name: "Değerlendiren Kullanıcı", value: `${interaction.user} (${interaction.user.id})`, inline: false },
+                    { name: "Talebi Kapatan Yetkili", value: `<@${closerId}> (${closerId})`, inline: false },
                 )
-                .setFooter({ text: `Ticket ID: ${ticketId}` })
                 .setTimestamp();
             await logChannel.send({ embeds: [ratingEmbed] });
         }
     }
-    db.delete(`ticket_rating_info_${ticketId}`); // Bilgiyi temizle
   }
 
   // Üye Ekleme Select Menu İşlemi
   if (interaction.isStringSelectMenu() && customId === "uye_ekle_menu") {
     const selectedMemberId = interaction.values[0];
-    const memberToAdd = await guild.members.fetch(selectedMemberId).catch(() => null);
+    const memberToAdd = await tempGuild.members.fetch(selectedMemberId).catch(() => null);
 
     if (!memberToAdd) {
         return interaction.update({ content: "❌ | Seçilen üye bulunamadı.", components: [] });
@@ -600,6 +607,7 @@ client.on("interactionCreate", async (interaction) => {
 
   // DM Gönderme Modal Submit İşlemi
   if (interaction.type === InteractionType.ModalSubmit && customId === "dm_gonder_modal") {
+    if(!ticketData) return;
     const dmIcerik = interaction.fields.getTextInputValue("dm_icerik");
     const { talepSahibiId } = ticketData;
     const talepSahibi = await client.users.fetch(talepSahibiId).catch(() => null);
@@ -610,7 +618,7 @@ client.on("interactionCreate", async (interaction) => {
 
     try {
         const dmEmbed = new EmbedBuilder()
-            .setAuthor({ name: `${user.username} (${guild.name})`, iconURL: user.displayAvatarURL({ dynamic: true }) })
+            .setAuthor({ name: `${user.username} (${tempGuild.name})`, iconURL: user.displayAvatarURL({ dynamic: true }) })
             .setTitle("📣 | Yetkiliden Yeni Mesaj")
             .setDescription(dmIcerik)
             .setColor("Blue")
@@ -628,13 +636,13 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isButton() && customId === "sesli_destek_toggle") {
     if(!ticketData) return;
     const { talepSahibiId } = ticketData;
-    const talepSahibi = await guild.members.fetch(talepSahibiId).catch(() => null);
+    const talepSahibi = await tempGuild.members.fetch(talepSahibiId).catch(() => null);
     if (!talepSahibi) {
       return interaction.reply({ content: "❌ | Talep sahibi bulunamadı.", ephemeral: true });
     }
 
     if (ticketData.voiceChannelId) {
-      const voiceChannel = guild.channels.cache.get(ticketData.voiceChannelId);
+      const voiceChannel = tempGuild.channels.cache.get(ticketData.voiceChannelId);
       if (voiceChannel) {
         try {
           await voiceChannel.delete();
@@ -651,13 +659,13 @@ client.on("interactionCreate", async (interaction) => {
       }
     } else {
       try {
-        const voiceChannel = await guild.channels.create({
-          name: `VoiceSupport-${talepSahibi.user.username}`,
+        const voiceChannel = await tempGuild.channels.create({
+          name: `Voice-${talepSahibi.user.username}`,
           type: ChannelType.GuildVoice,
           parent: channel.parentId,
           permissionOverwrites: [
             {
-              id: guild.id,
+              id: tempGuild.id,
               deny: [PermissionsBitField.Flags.ViewChannel],
             },
             {
@@ -676,8 +684,7 @@ client.on("interactionCreate", async (interaction) => {
         });
         db.set(`destek_kanal_by_channel_${channel.id}.voiceChannelId`, voiceChannel.id);
         await interaction.reply({ content: `✅ | Sesli destek kanalı <#${voiceChannel.id}> başarıyla açıldı.`, ephemeral: true });
-        await channel.send({ embeds: [new EmbedBuilder().setColor("Green").setDescription(`📞 | Sesli destek kanalı <#${voiceChannel.id}> <@${user.id}> tarafından açıldı.`)
-        .addFields({ name: "ℹ️ Nasıl Çalışır?", value: "Bu kanala katılarak yetkililerle sesli görüşme yapabilirsiniz.", inline: false })] });
+        await channel.send({ embeds: [new EmbedBuilder().setColor("Green").setDescription(`📞 | Sesli destek kanalı <#${voiceChannel.id}> <@${user.id}> tarafından açıldı.`)] });
       } catch (error) {
         console.error("Sesli kanal oluşturulurken hata:", error);
         await interaction.reply({ content: "❌ | Sesli destek kanalı oluşturulurken bir hata oluştu.", ephemeral: true });
@@ -727,7 +734,7 @@ client.on("interactionCreate", async (interaction) => {
   // TALEBİ DEVRET BUTONU
   if (interaction.isButton() && customId === "devret") {
     if(!sistemVeri) return;
-    const yetkililer = guild.members.cache.filter(m => (m.roles.cache.has(sistemVeri.yetkiliRol) || m.permissions.has(PermissionsBitField.Flags.ManageChannels)) && !m.user.bot && m.id !== user.id);
+    const yetkililer = tempGuild.members.cache.filter(m => (m.roles.cache.has(sistemVeri.yetkiliRol) || m.permissions.has(PermissionsBitField.Flags.ManageChannels)) && !m.user.bot && m.id !== user.id);
     if (yetkililer.size === 0) {
         return interaction.reply({ content: "❌ | Devredilecek başka yetkili bulunamadı.", ephemeral: true });
     }
@@ -750,7 +757,7 @@ client.on("interactionCreate", async (interaction) => {
   if (interaction.isButton() && customId.startsWith("cikar_uye_")) {
     if(!ticketData || !sistemVeri) return;
     const uyeId = customId.split("_")[2];
-    const memberToRemove = await guild.members.fetch(uyeId).catch(() => null);
+    const memberToRemove = await tempGuild.members.fetch(uyeId).catch(() => null);
     if (!memberToRemove) {
         return interaction.update({ content: "❌ | Bu üye artık sunucuda bulunmuyor.", components: [] });
     }
