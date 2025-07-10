@@ -7,7 +7,7 @@ const axios = require("axios");
 
 module.exports = {
   // --- Komutun Temel Bilgileri ---
-  name: "chat",
+  name: "AI",
   description: "Yapay zeka ile sohbet edin.",
   type: ApplicationCommandType.ChatInput,
   cooldown: 10, // Yapay zeka komutları için 10 saniye bekleme süresi iyi bir başlangıçtır.
