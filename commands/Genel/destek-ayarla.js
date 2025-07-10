@@ -19,7 +19,7 @@ const fs = require("node:fs");
 
 // Ana komut tanımı
 module.exports = {
-  name: "destek-sistemi",
+  name: "destek-ayarla",
   description: "Destek sistemi kurar ve yönetir.",
   type: ApplicationCommandType.ChatInput,
   cooldown: 10,
